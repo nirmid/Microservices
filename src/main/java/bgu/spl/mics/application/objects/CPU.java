@@ -13,13 +13,25 @@ public class CPU {
     private Cluster cluster;
     private long time;
 
-    public CPU(int _cores,LinkedList<DataBatch> _data,Cluster _cluster,int _time){} // constractor
+    public CPU(int _cores,LinkedList<DataBatch> _data,Cluster _cluster,int _time){} //constractor
 
     /**
-     * @pre
+     * process the data form linkedList and send the processed data to cluster
+     * @pre data != null && data.getFirst() != null
+     * @post @pre(data.getFirst()) != data.getFirst()
+      */
+    public void processData(){}
+
+    /**
+     * add dataBatch sent from cluster to data
+     * @post data.getLast() == _data;
      */
-    public void processData(){} // process the data form linkedlist and send the processed data to cluster
-    public void recieveDataBatch(){} //  add dataBatch to data
+    public void recieveDataBatch(DataBatch _data){}
+
+    /**
+     * @param _time time as received from TimerService
+     * @post time = _time
+     */
     public void updateTime(int _time){} //  update time according to TimerService
     public int getCores(){return 1;} // returns cores
     public LinkedList<DataBatch> getData(){return data;} // returns data
