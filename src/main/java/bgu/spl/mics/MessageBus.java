@@ -18,6 +18,7 @@ public interface MessageBus {
      * @param type The type to subscribe to,
      * @param m    The subscribing micro-service.
      */
+
     <T> void subscribeEvent(Class<? extends Event<T>> type, MicroService m);
 
     /**

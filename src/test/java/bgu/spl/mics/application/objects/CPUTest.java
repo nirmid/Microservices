@@ -19,7 +19,7 @@ public class CPUTest {
 
     @Test
     public void processData() {
-        assertNotNull("was expecting not null linkedlist of DataBatch",);
+        assertNotNull("was expecting not null linkedlist of DataBatch");
     }
 
     @Test
