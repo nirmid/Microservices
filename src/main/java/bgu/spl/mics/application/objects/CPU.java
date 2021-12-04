@@ -24,6 +24,7 @@ public class CPU {
 
     /**
      * add dataBatch sent from cluster to data
+     * @pre _data != null
      * @post data.getLast() == _data;
      */
     public void recieveDataBatch(DataBatch _data){}
