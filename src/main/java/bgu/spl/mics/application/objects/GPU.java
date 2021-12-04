@@ -35,9 +35,10 @@ public class GPU {
 
 
     /**
+     * get processed data from cluster and insert it into preTrained collection
      * @pre preTrained.size < capacity && processed.data == this.model.data
      * @inv preTrained.size <= capacity
-     * @post preTrained.size <= capacity && @pre(preTrained.size) + 1 == preTrained.size && preTrained.getLast == processed
+     * @post preTrained.size <= capacity && @pre(preTrained.size) + 1 == preTrained.size
      *
      * @param processed
      */
@@ -50,13 +51,19 @@ public class GPU {
 
     /**
      * @pre preTrained.isEmpty()
-     * @post this.model = model
+     * @post this.model = model && batchIdx == 0
      *
      *
      * @param model
      */
     public void setModel(Model model ){
     }
+    public int getCapacity(){return capacity;}
+    public int getPreTrainedSize(){return preTrained.size();}
+    public Model getModel(){return model;}
+    public int getBatchIdx(){return batchIdx;}
+
+
 
 
 

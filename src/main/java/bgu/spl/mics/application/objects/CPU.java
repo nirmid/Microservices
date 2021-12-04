@@ -30,6 +30,7 @@ public class CPU {
     public void recieveDataBatch(DataBatch _data){}
 
     /**
+     * update time
      * @param _time time as received from TimerService
      * @post time = _time
      */
