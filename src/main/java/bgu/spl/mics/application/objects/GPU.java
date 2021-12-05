@@ -47,7 +47,7 @@ public class GPU {
 
     private void splitData(){}
 
-    private  void train(){}
+    private void train(){}
 
     /**
      * @pre preTrained.isEmpty()

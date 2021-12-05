@@ -28,19 +28,28 @@ public class MessageBusImplTest {
     public void subscribeEvent() {
         try{
             bus.subscribeEvent(event.getClass(),m);
-
+            fail("should be able to subscribe before registeration");
         } catch(Exception e){
+            bus.register(m);
+            bus.subscribeEvent(event.getClass(),m);
+            bus.unregister(m); // in order to not interfere with other test
 
         }
-
-
-
 
 
     }
 
     @Test
     public void subscribeBroadcast() {
+        try{
+            bus.subscribeBroadcast(broadcast.getClass(),m);
+            fail("should be able to subscribe before registeration");
+        } catch(Exception e){
+            bus.register(m);
+            bus.subscribeBroadcast(broadcast.getClass(),m);
+            //assertTrue(); // is registered ?
+            bus.unregister(m); // in order to not interfere with other test
+        }
     }
 
     @Test
