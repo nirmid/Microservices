@@ -86,10 +86,16 @@ public class MessageBusImplTest {
     }
 
     @Test
-    public void awaitMessage() {
+    public void awaitMessage() throws InterruptedException {
+        assertThrows("expected exception: microservice m is not registered",Exception.class,() -> bus.awaitMessage(m));
+        bus.register(m);
+        bus.subscribeEvent(event.getClass(),m);
+        assertThrows("expected exception: message queue is empty",Exception.class,() -> bus.awaitMessage(m));
+        bus.sendEvent(event);
+        assertEquals("expected message to be equal to message sent",event,bus.awaitMessage(m));
+        bus.unregister(m); // in order to not interfere with other tests
+
+
     }
 
-    @Test
-    public void getInstace() {
-    }
 }
