@@ -25,7 +25,7 @@ public class Future<T> {
      * not been completed.
      * <p>
      * @return return the result of type T if it is available, if not wait until it is available.
-     * @pre this.result != null
+	 * @post returns valid result
      */
 	public T get() {
 		//TODO: implement this.

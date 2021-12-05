@@ -36,6 +36,8 @@ public class MessageBusImpl implements MessageBus {
 	 * @param e      The completed event.
 	 * @param result The resolved result of the completed event.
 	 * @param <T>
+	 * @pre  microservice has registered and subscribed to Event e && event has been sent
+	 * @post processing of event has finished with result param
 	 */
 	@Override
 	public <T> void complete(Event<T> e, T result) {
@@ -46,6 +48,8 @@ public class MessageBusImpl implements MessageBus {
 	/**
 	 *
 	 * @param b 	The message to added to the queues.
+	 * @pre  there is a microservice that has been subscribed to the broadcast
+	 * @post Broadcast b has been sent to the relevant microservice
 	 */
 	@Override
 	public void sendBroadcast(Broadcast b) {
@@ -58,6 +62,8 @@ public class MessageBusImpl implements MessageBus {
 	 * @param e     	The event to add to the queue.
 	 * @param <T>
 	 * @return
+	 * @pre there is a microservice that has been subscribed to the event
+	 * @post Event e has been sent to the relevant microservice
 	 */
 	
 	@Override
@@ -67,7 +73,8 @@ public class MessageBusImpl implements MessageBus {
 	}
 
 	/**
-	 *
+	 * @pre MicroService m is not currently registered
+	 * @post MicroService m is registered and has a queue at MessageBus
 	 * @param m the micro-service to create a queue for.
 	 */
 	@Override
@@ -77,7 +84,8 @@ public class MessageBusImpl implements MessageBus {
 	}
 
 	/**
-	 *
+	 * @pre a MicroService m is registered
+	 * @post a MicroService m is not registered
 	 * @param m the micro-service to unregister.
 	 */
 	@Override
@@ -98,23 +106,6 @@ public class MessageBusImpl implements MessageBus {
 		// TODO Auto-generated method stub
 		return null;
 	}
-
-	/**
-	 *
-	 * @param m
-	 * @param type
-	 * @return true if m is registered to Broadcast type
-	 */
-	public boolean isRegisterBroadcast(MicroService m ,Class<? extends Broadcast> type ){return false;}
-
-	/**
-	 *
-	 * @param m
-	 * @param type
-	 * @param <T>
-	 * @return true if m is registered to Event type
-	 */
-	public <T> boolean isRegisterEvent(MicroService m ,Class<? extends Event<T>> type ){return false;}
 
 	/**
 	 *

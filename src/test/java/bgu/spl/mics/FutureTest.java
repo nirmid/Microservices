@@ -15,18 +15,16 @@ public class FutureTest {
         future = new Future();
     }
 
-    @After
-    public void tearDown() throws Exception {
-    }
 
     @Test
     public void get() {
-        assertNotNull("expected result to not be null",future.get());
+        future.resolve("test");
+        assertEquals("expected exception: expected the same value","test",future.get());
     }
 
     @Test
     public void resolve() {
-        assertThrows("was expected for exception for null param",Exception.class,() -> future.resolve(null)  );
+        assertThrows("was expected for exception for null param",Exception.class,() -> future.resolve(null) );
         assertNull("was expected result to be null",future.get());
         future.resolve("test");
         assertEquals("test",future.get());
@@ -35,9 +33,9 @@ public class FutureTest {
     @Test
     public void getTimeout() {
         assertNull("expected null", future.get(10, TimeUnit.MILLISECONDS));
-        assertThrows("was expecting non null & positive long",Exception.class,() -> future.get(-10,TimeUnit.MILLISECONDS));
-        assertThrows("was expecting non null & positive long",Exception.class,() -> future.get(10,null));
+        assertThrows("expected exception: negative timeout value",Exception.class,() -> future.get(-10,TimeUnit.MILLISECONDS));
+        assertThrows("expected exception: null TimeOut value",Exception.class,() -> future.get(10,null));
         future.resolve("test");
-        assertEquals("was expecting same value as resolve","test",future.get());
+        assertEquals("was expecting same value as resolve","test",future.get(10,TimeUnit.MILLISECONDS));
     }
 }
