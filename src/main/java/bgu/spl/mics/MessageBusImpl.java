@@ -15,6 +15,7 @@ public class MessageBusImpl implements MessageBus {
 	private LinkedHashMap<Broadcast,MicroService> broadcastMap;
 	private LinkedHashMap<MicroService,Message> microMap;
 
+
 	@Override
 	/**
 	 * @param
@@ -106,6 +107,8 @@ public class MessageBusImpl implements MessageBus {
 	 *          queue.
 	 * @return
 	 * @throws InterruptedException
+     * @pre
+     *
 	 */
 	@Override
 	public Message awaitMessage(MicroService m) throws InterruptedException {
