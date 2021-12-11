@@ -16,7 +16,7 @@ public class Future<T> {
 	 * This should be the the only public constructor in this class.
 	 */
 	public Future() {
-		//TODO: implement this
+		result = null ;
 	}
 	
 	/**
@@ -27,9 +27,10 @@ public class Future<T> {
      * @return return the result of type T if it is available, if not wait until it is available.
 	 * @post returns valid result
      */
-	public T get() {
-		//TODO: implement this.
-		return null;
+	public T get() throws InterruptedException {
+		while(!isDone())
+			synchronized (this){wait();}
+		return result;
 	}
 	
 	/**
@@ -39,15 +40,19 @@ public class Future<T> {
 	 * @post this.result = T result
      */
 	public void resolve (T result) {
-		//TODO: implement this.
+		if(result == null || this.result != null )
+			throw new IllegalArgumentException("argument is null or this.result is already resolved");
+		this.result = result;
+		this.notifyAll();
 	}
 	
 	/**
      * @return true if this object has been resolved, false otherwise
      */
 	public boolean isDone() {
-		//TODO: implement this.
-		return false;
+		if(this.result == null)
+			return false;
+		return true;
 	}
 	
 	/**
@@ -63,9 +68,11 @@ public class Future<T> {
 	 * @pre unit is legal TimeUnit && timeout != null && timeout > 0
 	 * @post return legal result if available
      */
-	public T get(long timeout, TimeUnit unit) {
-		//TODO: implement this.
-		return null;
+	public T get(long timeout, TimeUnit unit) throws InterruptedException {
+		if(result == null) {
+			unit.sleep(timeout);
+		}
+		return result;
 	}
 
 }

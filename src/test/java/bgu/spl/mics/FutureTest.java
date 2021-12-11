@@ -17,13 +17,13 @@ public class FutureTest {
 
 
     @Test
-    public void get() {
+    public void get() throws InterruptedException {
         future.resolve("test");
         assertEquals("expected exception: expected the same value","test",future.get());
     }
 
     @Test
-    public void resolve() {
+    public void resolve() throws InterruptedException {
         assertThrows("was expected for exception for null param",Exception.class,() -> future.resolve(null) );
         assertNull("was expected result to be null",future.get());
         future.resolve("test");
@@ -31,7 +31,7 @@ public class FutureTest {
     }
 
     @Test
-    public void getTimeout() {
+    public void getTimeout() throws InterruptedException {
         assertNull("expected null", future.get(10, TimeUnit.MILLISECONDS));
         assertThrows("expected exception: negative timeout value",Exception.class,() -> future.get(-10,TimeUnit.MILLISECONDS));
         assertThrows("expected exception: null TimeOut value",Exception.class,() -> future.get(10,null));
