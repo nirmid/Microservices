@@ -70,7 +70,7 @@ public class Future<T> {
      */
 	public T get(long timeout, TimeUnit unit) throws InterruptedException {
 		if(result == null) {
-			unit.sleep(timeout);
+			synchronized (this){unit.sleep(timeout);}
 		}
 		return result;
 	}
