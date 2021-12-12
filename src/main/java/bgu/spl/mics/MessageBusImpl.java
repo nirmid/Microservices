@@ -1,9 +1,7 @@
 package bgu.spl.mics;
 
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.LinkedList;
-import java.util.Queue;
 import java.util.*;
 
 /**
@@ -25,17 +23,30 @@ public class MessageBusImpl implements MessageBus {
 	 * @param
 	 * @post MicroService m is subscribed to Event of type
 	 */
-	public synchronized <T> void subscribeEvent(Class<? extends Event<T>> type, MicroService m) {
+	public  <T> void subscribeEvent(Class<? extends Event<T>> type, MicroService m) {
 		if(microMap.get(m) == null)
 			throw new IllegalArgumentException("Microservice m has not registered");
 		if(eventMap.get(type) !=null){
 			LinkedList<MicroService> list= eventMap.get(type);
-			list.addLast(m);
+			synchronized(list) {
+				list.addLast(m);
+			}
 		}
 		else{
-			LinkedList<MicroService> list= new LinkedList<MicroService>();
-			list.addLast(m);
-			eventMap.put(type,list);
+			synchronized(eventMap) {
+				if(eventMap.get(type) !=null) {
+					LinkedList<MicroService> list = eventMap.get(type);
+					synchronized (list) {
+						list.addLast(m);
+					}
+				}
+				else{
+						LinkedList<MicroService> list = new LinkedList<MicroService>();
+						list.addLast(m);
+						eventMap.put(type, list);
+					}
+			}
+
 		}
 	}
 
@@ -46,17 +57,28 @@ public class MessageBusImpl implements MessageBus {
 	 * @post MicroService m is subscribed to Broadcast of type
 	 */
 	@Override
-	public synchronized void subscribeBroadcast(Class<? extends Broadcast> type, MicroService m) {
-		if(microMap.get(m) == null)
+	public void subscribeBroadcast(Class<? extends Broadcast> type, MicroService m) {
+		if (microMap.get(m) == null)
 			throw new IllegalArgumentException("Microservice m has not registered");
-		if(broadcastMap.get(type) != null){
-			LinkedList<MicroService> list= broadcastMap.get(type);
-			list.addLast(m);
-		}
-		else{
-			LinkedList<MicroService> list= new LinkedList<MicroService>();
-			list.addLast(m);
-			broadcastMap.put(type,list);
+		if (broadcastMap.get(type) != null) {
+			LinkedList<MicroService> list = broadcastMap.get(type);
+			synchronized (list) {
+				list.addLast(m);
+			}
+		} else {
+			synchronized (broadcastMap) {
+				if (broadcastMap.get(type) != null) {
+					LinkedList<MicroService> list = broadcastMap.get(type);
+					synchronized (list) {
+						list.addLast(m);
+					}
+				} else {
+					LinkedList<MicroService> list = new LinkedList<MicroService>();
+					list.addLast(m);
+					broadcastMap.put(type, list);
+				}
+			}
+
 		}
 	}
 
@@ -86,7 +108,10 @@ public class MessageBusImpl implements MessageBus {
 	public void sendBroadcast(Broadcast b) {
         LinkedList<MicroService> subscribers = broadcastMap.get(b.getClass());
         for (MicroService m : subscribers)
-            (microMap.get(m)).addLast(b);
+           synchronized (microMap.get(m)){
+			(microMap.get(m)).addLast(b);
+		   }
+		notifyAll();
 	}
 
 	/**
@@ -100,18 +125,21 @@ public class MessageBusImpl implements MessageBus {
 	
 	@Override
 	public <T> Future<T> sendEvent(Event<T> e) {
-		Future<T> future = new Future<T>(); // is it thread safe??
-		futureMap.put(e, future);
 		if(eventMap.get(e.getClass()) == null)
 			return null;
+		Future<T> future = new Future<T>();
+		synchronized (futureMap) {
+			futureMap.put(e, future);
+		}
 		LinkedList<MicroService> list = eventMap.get(e.getClass());
-		synchronized (list) {    // should it be synchronized on Microservice list ?
+		synchronized (list) {
 			MicroService m = list.removeFirst();
 			list.addLast(m);
 			synchronized (microMap.get(m)) {
 				microMap.get(m).addLast(e);
 			}
 		}
+		notifyAll();
 		return future;
 	}
 
@@ -121,11 +149,13 @@ public class MessageBusImpl implements MessageBus {
 	 * @param m the micro-service to create a queue for.
 	 */
 	@Override
-	public synchronized void register(MicroService m) {
-		if(microMap.get(m) != null)
-			throw new IllegalArgumentException("m already has registered");
-		LinkedList<Message> list = new LinkedList<Message>();
-		microMap.put(m, list);
+	public void register(MicroService m) {
+			if (microMap.get(m) != null)
+				throw new IllegalArgumentException("m already has registered");
+			LinkedList<Message> list = new LinkedList<Message>();
+			synchronized (microMap) {
+				microMap.put(m, list);
+			}
 	}
 
 	/**
@@ -136,10 +166,16 @@ public class MessageBusImpl implements MessageBus {
 	@Override
 	public void unregister(MicroService m) {
 		for (Map.Entry<Class<? extends Event>, LinkedList<MicroService>> iter : eventMap.entrySet() )
-		    (iter.getValue()).remove(m);
+			synchronized (iter.getValue()) {
+				(iter.getValue()).remove(m);
+			}
         for (Map.Entry<Class<? extends Broadcast>, LinkedList<MicroService>> iter : broadcastMap.entrySet() )
-            (iter.getValue()).remove(m);
-        microMap.remove(m);
+			synchronized (iter.getValue()) {
+				(iter.getValue()).remove(m);
+			}
+		synchronized (microMap) {
+			microMap.remove(m);
+		}
 	}
 
 	/**
@@ -153,7 +189,7 @@ public class MessageBusImpl implements MessageBus {
 	 */
 	@Override
 	public Message awaitMessage(MicroService m) throws InterruptedException {
-		synchronized (this) {
+		synchronized (microMap.get(m)) {
 			while (microMap.get(m).isEmpty()) {
 				wait();
 			}
