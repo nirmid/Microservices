@@ -20,6 +20,7 @@ package bgu.spl.mics;
  */
 public abstract class MicroService implements Runnable {
 
+
     private boolean terminated = false;
     private final String name;
 

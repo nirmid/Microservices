@@ -18,6 +18,7 @@ public class MessageBusImpl implements MessageBus {
 	private HashMap<MicroService, LinkedList<Message>> microMap; // holds messages queues for each microservice
 	private HashMap<Event,Future> futureMap; // holds future that is associated with an event
 
+
 	@Override
 	/**
 	 * @param
@@ -142,6 +143,8 @@ public class MessageBusImpl implements MessageBus {
 	 *          queue.
 	 * @return
 	 * @throws InterruptedException
+     * @pre
+     *
 	 */
 	@Override
 	public Message awaitMessage(MicroService m) throws InterruptedException {
