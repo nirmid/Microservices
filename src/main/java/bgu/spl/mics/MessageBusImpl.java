@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.*;
 
 /**
  * The {@link MessageBusImpl class is the implementation of the MessageBus interface.
@@ -83,8 +84,9 @@ public class MessageBusImpl implements MessageBus {
 	 */
 	@Override
 	public void sendBroadcast(Broadcast b) {
-		// TODO Auto-generated method stub
-
+        LinkedList<MicroService> subscribers = broadcastMap.get(b.getClass());
+        for (MicroService m : subscribers)
+            (microMap.get(m)).addLast(b);
 	}
 
 	/**
@@ -133,8 +135,11 @@ public class MessageBusImpl implements MessageBus {
 	 */
 	@Override
 	public void unregister(MicroService m) {
-		// TODO Auto-generated method stub
-
+		for (Map.Entry<Class<? extends Event>, LinkedList<MicroService>> iter : eventMap.entrySet() )
+		    (iter.getValue()).remove(m);
+        for (Map.Entry<Class<? extends Broadcast>, LinkedList<MicroService>> iter : broadcastMap.entrySet() )
+            (iter.getValue()).remove(m);
+        microMap.remove(m);
 	}
 
 	/**
