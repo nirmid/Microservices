@@ -1,19 +1,18 @@
 package bgu.spl.mics;
 
-import java.util.HashMap;
-import java.util.LinkedHashMap;
+import java.util.*;
 
 /**
  * The {@link MessageBusImpl class is the implementation of the MessageBus interface.
  * Write your implementation here!
  * Only private fields and methods can be added to this class.
  */
-public class MessageBusImpl implements MessageBus {
+public class MessageBusImpl<linkedList> implements MessageBus {
 
 	private static MessageBus bus;
-	private LinkedHashMap<Event,MicroService> eventMap;
-	private LinkedHashMap<Broadcast,MicroService> broadcastMap;
-	private LinkedHashMap<MicroService,Message> microMap;
+	private HashMap<Class<? extends Event>, LinkedList<MicroService>> eventMap;
+	private HashMap<Class<? extends Broadcast>,LinkedList<MicroService>> broadcastMap;
+	private HashMap<MicroService,LinkedList<Message>> microMap;
 
 
 	@Override
@@ -60,8 +59,9 @@ public class MessageBusImpl implements MessageBus {
 	 */
 	@Override
 	public void sendBroadcast(Broadcast b) {
-		// TODO Auto-generated method stub
-
+        LinkedList<MicroService> subscribers = broadcastMap.get(b.getClass());
+        for (MicroService m : subscribers)
+            (microMap.get(m)).addLast(b);
 	}
 
 	/**
@@ -97,8 +97,11 @@ public class MessageBusImpl implements MessageBus {
 	 */
 	@Override
 	public void unregister(MicroService m) {
-		// TODO Auto-generated method stub
-
+		for (Map.Entry<Class<? extends Event>, LinkedList<MicroService>> iter : eventMap.entrySet() )
+		    (iter.getValue()).remove(m);
+        for (Map.Entry<Class<? extends Broadcast>, LinkedList<MicroService>> iter : broadcastMap.entrySet() )
+            (iter.getValue()).remove(m);
+        microMap.remove(m);
 	}
 
 	/**
