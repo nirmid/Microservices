@@ -2,6 +2,8 @@ package bgu.spl.mics;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.Queue;
 
 /**
  * The {@link MessageBusImpl class is the implementation of the MessageBus interface.
@@ -11,18 +13,28 @@ import java.util.LinkedHashMap;
 public class MessageBusImpl implements MessageBus {
 
 	private static MessageBus bus;
-	private LinkedHashMap<Event,MicroService> eventMap;
-	private LinkedHashMap<Broadcast,MicroService> broadcastMap;
-	private LinkedHashMap<MicroService,Message> microMap;
+	private HashMap<Class<? extends Event>, LinkedList<MicroService>> eventMap; // holds microservice linkedlist which are subscribed to some event type
+	private HashMap<Class<? extends Broadcast>,LinkedList<MicroService>> broadcastMap; // holds microservice linkedlist which are subscribed to some broadcast type
+	private HashMap<MicroService, LinkedList<Message>> microMap; // holds messages queues for each microservice
+	private HashMap<Event,Future> futureMap; // holds future that is associated with an event
 
 	@Override
 	/**
 	 * @param
 	 * @post MicroService m is subscribed to Event of type
 	 */
-	public <T> void subscribeEvent(Class<? extends Event<T>> type, MicroService m) {
-
-
+	public synchronized <T> void subscribeEvent(Class<? extends Event<T>> type, MicroService m) {
+		if(microMap.get(m) == null)
+			throw new IllegalArgumentException("Microservice m has not registered");
+		if(eventMap.get(type) !=null){
+			LinkedList<MicroService> list= eventMap.get(type);
+			list.addLast(m);
+		}
+		else{
+			LinkedList<MicroService> list= new LinkedList<MicroService>();
+			list.addLast(m);
+			eventMap.put(type,list);
+		}
 	}
 
 	/**
@@ -32,9 +44,18 @@ public class MessageBusImpl implements MessageBus {
 	 * @post MicroService m is subscribed to Broadcast of type
 	 */
 	@Override
-	public void subscribeBroadcast(Class<? extends Broadcast> type, MicroService m) {
-		// TODO Auto-generated method stub
-
+	public synchronized void subscribeBroadcast(Class<? extends Broadcast> type, MicroService m) {
+		if(microMap.get(m) == null)
+			throw new IllegalArgumentException("Microservice m has not registered");
+		if(broadcastMap.get(type) != null){
+			LinkedList<MicroService> list= broadcastMap.get(type);
+			list.addLast(m);
+		}
+		else{
+			LinkedList<MicroService> list= new LinkedList<MicroService>();
+			list.addLast(m);
+			broadcastMap.put(type,list);
+		}
 	}
 
 	/**
@@ -47,7 +68,9 @@ public class MessageBusImpl implements MessageBus {
 	 */
 	@Override
 	public <T> void complete(Event<T> e, T result) {
-		// TODO Auto-generated method stub
+		if(futureMap.get(e) == null)
+			throw new IllegalArgumentException("event e does not have associated future");
+		futureMap.get(e).resolve(result);
 
 	}
 
@@ -74,8 +97,19 @@ public class MessageBusImpl implements MessageBus {
 	
 	@Override
 	public <T> Future<T> sendEvent(Event<T> e) {
-		// TODO Auto-generated method stub
-		return null;
+		Future<T> future = new Future<T>(); // is it thread safe??
+		futureMap.put(e, future);
+		if(eventMap.get(e.getClass()) == null)
+			return null;
+		LinkedList<MicroService> list = eventMap.get(e.getClass());
+		synchronized (list) {    // should it be synchronized on Microservice list ?
+			MicroService m = list.removeFirst();
+			list.addLast(m);
+			synchronized (microMap.get(m)) {
+				microMap.get(m).addLast(e);
+			}
+		}
+		return future;
 	}
 
 	/**
@@ -84,9 +118,11 @@ public class MessageBusImpl implements MessageBus {
 	 * @param m the micro-service to create a queue for.
 	 */
 	@Override
-	public void register(MicroService m) {
-		// TODO Auto-generated method stub
-
+	public synchronized void register(MicroService m) {
+		if(microMap.get(m) != null)
+			throw new IllegalArgumentException("m already has registered");
+		LinkedList<Message> list = new LinkedList<Message>();
+		microMap.put(m, list);
 	}
 
 	/**
@@ -109,8 +145,12 @@ public class MessageBusImpl implements MessageBus {
 	 */
 	@Override
 	public Message awaitMessage(MicroService m) throws InterruptedException {
-		// TODO Auto-generated method stub
-		return null;
+		synchronized (this) {
+			while (microMap.get(m).isEmpty()) {
+				wait();
+			}
+			return microMap.get(m).removeFirst();
+		}
 	}
 
 	/**
