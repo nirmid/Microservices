@@ -18,28 +18,19 @@ import java.util.TimerTask;
  * You MAY change constructor signatures and even add new public constructors.
  */
 public class TimeService extends MicroService{
+	private TimerTask timer;
 	private long currentTime;
 	private int duration;
 	private int speed;
 
 	public TimeService(int _duration,int _speed) {
-		super("Change_This_Name");
+		super("TimerService");
 		speed = _speed;
 		duration = _duration;
 		currentTime = 0 ;
 		// TODO Implement this
 
 	}
-
-	Callback<TimeService> timeServiceCallback = (TimeService timeservice) -> {
-		Timer timer = new Timer();
-		TickBroadcast b = new TickBroadcast();
-		timer.scheduleAtFixedRate(new TimerTask() {
-			public void run() {
-				sendBroadcast(b);
-			}
-		}, speed, speed);
-	};
 	@Override
 	protected void initialize() {
 

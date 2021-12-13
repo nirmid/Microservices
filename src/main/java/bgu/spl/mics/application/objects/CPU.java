@@ -48,7 +48,7 @@ public class CPU {
             default:
                 throw new IllegalStateException("Unexpected value: " + currentData.getType());
         }
-        while(time-currentTime > processTime)
+        while(time-currentTime < processTime)
             wait();
         cluster.receiveProcessed(currentData);
     }

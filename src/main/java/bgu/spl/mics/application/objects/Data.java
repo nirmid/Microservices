@@ -18,7 +18,11 @@ public class Data {
 
     public Type getType(){return type;}
     public int getSize(){return size;}
+    public int getProcessed(){return processed;}
     public void updateProcess(int num){
-        processed = processed + num;
+        synchronized (this){
+            processed = processed + num;
+        }
     }
+
 }
