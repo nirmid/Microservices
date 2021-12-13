@@ -10,5 +10,7 @@ public class DataBatch {
     private int start_index;
 
     public DataBatch(Data _data,int _start_index){}
-    
+
+    public Data.Type getType(){ return data.getType();}
+
 }

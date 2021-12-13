@@ -10,34 +10,71 @@ import java.util.LinkedList;
 public class CPU {
     private int cores;
     private LinkedList<DataBatch> data;
-    private Cluster cluster;
+    private Cluster cluster; // should be instance
     private long time;
 
-    public CPU(int _cores,LinkedList<DataBatch> _data,Cluster _cluster,int _time){} //constractor
+    public CPU(int _cores,int _time){ //constractor
+        data = new LinkedList<DataBatch>();
+        cores = _cores;
+        cluster = Cluster.getInstance();
+
+    }
 
     /**
      * process the data form linkedList and send the processed data to cluster
      * @pre data != null && data.getFirst() != null
      * @post @pre(data.getFirst()) != data.getFirst()
       */
-    public void processData(){}
+    public void processData() throws InterruptedException {
+        while(data.isEmpty())
+            wait();
+        long currentTime = time;
+        long processTime;
+        DataBatch currentData;
+        synchronized (data){
+            currentData = data.removeFirst();
+        }
+        switch (currentData.getType()){
+            case Images:
+                processTime = ((long)(32/cores))* 4;
+                break;
+            case Text:
+                processTime = ((long)(32/cores))*2;
+                break;
+            case Tabular:
+                processTime = ((long)(32/cores));
+                break;
+            default:
+                throw new IllegalStateException("Unexpected value: " + currentData.getType());
+        }
+        while(time-currentTime > processTime)
+            wait();
+        cluster.receiveProcessed(currentData);
+    }
 
     /**
      * add dataBatch sent from cluster to data
      * @pre _data != null
      * @post data.getLast() == _data;
      */
-    public void recieveDataBatch(DataBatch _data){}
+    public void recieveDataBatch(DataBatch _data){
+        synchronized (data){
+            data.addLast(_data);
+        }
+        notifyAll();
+    }
 
     /**
      * update time
      * @param _time time as received from TimerService
      * @post time = _time
      */
-    public void updateTime(int _time){} //  update time according to TimerService
-    public int getCores(){return 1;} // returns cores
+    public void updateTime(int _time){
+        time=_time;
+        notifyAll();
+    } //  update time according to TimerService
+    public int getCores(){return cores;} // returns cores
     public LinkedList<DataBatch> getData(){return data;} // returns data
-    public Cluster getCluster(){return cluster;}// returns cluster
     public long getTime(){return time;} // returns time
 
 
