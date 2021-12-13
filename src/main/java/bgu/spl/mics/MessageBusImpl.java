@@ -11,13 +11,19 @@ import java.util.*;
  */
 public class MessageBusImpl implements MessageBus {
 
-	private static MessageBus bus;
+	private static MessageBusImpl bus = null;
 	private HashMap<Class<? extends Event>, LinkedList<MicroService>> eventMap; // holds microservice linkedlist which are subscribed to some event type
 	private HashMap<Class<? extends Broadcast>,LinkedList<MicroService>> broadcastMap; // holds microservice linkedlist which are subscribed to some broadcast type
 	private HashMap<MicroService, LinkedList<Message>> microMap; // holds messages queues for each microservice
 	private HashMap<Event,Future> futureMap; // holds future that is associated with an event
+	private static boolean isDone = false;
 
-
+	private MessageBusImpl(){
+		eventMap = new HashMap<Class<? extends Event>, LinkedList<MicroService>>();
+		broadcastMap = new HashMap<Class<? extends Broadcast>,LinkedList<MicroService>>();
+		microMap = new HashMap<MicroService, LinkedList<Message>>();
+		futureMap = new HashMap<Event,Future>();
+	}
 	@Override
 	/**
 	 * @param
@@ -201,12 +207,17 @@ public class MessageBusImpl implements MessageBus {
 	 *
 	 * @return
 	 */
-	public static MessageBus getInstace(){
-		if(bus == null)
-			bus = new MessageBusImpl();
+	public static MessageBusImpl getInstace() {
+		if (isDone == false) {
+			synchronized (MessageBusImpl.class) {
+				if (isDone == false) {
+					bus = new MessageBusImpl();
+					isDone = true;
+				}
+			}
+		}
 		return bus;
 	}
-
 
 
 	

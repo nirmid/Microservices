@@ -11,11 +11,11 @@ public class GPUTest {
     @Before
     public void setUp() throws Exception {
         Cluster cluster=new Cluster();
-        gpu=new GPU(GPU.Type.GTX1080,cluster);
+        gpu=new GPU(GPU.Type.GTX1080);
     }
 
     @Test
-    public void insertProcessed() {
+    public void insertProcessed() throws InterruptedException {
         assertTrue("preTrained.size should be smaller than capacity",gpu.getPreTrainedSize() < gpu.getCapacity());
         Data d1=new Data();
         Data d2=new Data();
@@ -35,12 +35,11 @@ public class GPUTest {
     }
 
     @Test
-    public void setModel() {
+    public void setModel() throws InterruptedException {
         Data d1=new Data();
         DataBatch data1= new DataBatch(d1,0);
         Model model = new Model("x",d1,new Student(), Model.status.PreTrained, Model.results.None);
         gpu.setModel(model);
-        assertEquals(0,gpu.getBatchIdx());
         gpu.insertProcessed(data1);
         Model model2 = new Model("y",new Data(),new Student(), Model.status.PreTrained, Model.results.None);
         assertThrows("cannot set model to gpu while processing another model",Exception.class,()-> gpu.setModel(model2));

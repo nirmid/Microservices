@@ -14,12 +14,12 @@ public class CPUTest {
     public void setUp() throws Exception {
         LinkedList<DataBatch> data=new LinkedList<DataBatch>();
         Cluster cluster=new Cluster();
-        cpu=new CPU(4,0);
+        cpu=new CPU(1);
     }
 
     @Test
     public void processData() throws InterruptedException {
-        CPU temp = new CPU(4,1 );
+        CPU temp = new CPU(1 );
         assertNotNull("was expecting not null linkedlist of DataBatch",temp.getData()); // testing @pre for nullity
         assertThrows("expected to throw execption for empty list",Exception.class,() -> cpu.processData()); // testing @pre for empty list
         DataBatch d=new DataBatch(new Data(),0);
@@ -43,7 +43,7 @@ public class CPUTest {
 
     @Test
     public void updateTime() {
-        cpu.updateTime(10);
+        cpu.updateTime();
         assertEquals(10,cpu.getTime());
     }
 }

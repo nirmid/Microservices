@@ -17,4 +17,8 @@ public class Data {
     private int size;
 
     public Type getType(){return type;}
+    public int getSize(){return size;}
+    public void updateProcess(int num){
+        processed = processed + num;
+    }
 }

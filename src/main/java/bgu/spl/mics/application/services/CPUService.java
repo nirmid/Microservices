@@ -1,6 +1,14 @@
 package bgu.spl.mics.application.services;
 
+import bgu.spl.mics.Callback;
+import bgu.spl.mics.Message;
+import bgu.spl.mics.MessageBusImpl;
 import bgu.spl.mics.MicroService;
+import bgu.spl.mics.application.messages.TickBroadcast;
+import bgu.spl.mics.application.objects.CPU;
+
+import java.util.Timer;
+import java.util.TimerTask;
 
 /**
  * CPU service is responsible for handling the {@link DataPreProcessEvent}.
@@ -11,14 +19,18 @@ import bgu.spl.mics.MicroService;
  */
 public class CPUService extends MicroService {
     private long time;
-    public CPUService(String name) {
-        super("Change_This_Name");
-        // TODO Implement this
+    private CPU cpu;
+    public CPUService(String name,CPU cpu) {
+        super(name);
+        this.cpu = cpu;
     }
 
     @Override
     protected void initialize() {
-
-
+    subscribeBroadcast(TickBroadcast.class, (t)-> {
+        cpu.updateTime();
+    });
     }
+
+
 }

@@ -2,6 +2,7 @@ package bgu.spl.mics.application.objects;
 
 
 import bgu.spl.mics.Event;
+import bgu.spl.mics.MessageBusImpl;
 import bgu.spl.mics.MicroService;
 
 import java.util.HashMap;
@@ -16,6 +17,8 @@ import java.util.LinkedList;
  */
 public class Cluster {
 	private HashMap<DataBatch,GPU> dataBMap;
+	private static boolean isDone = false;
+	private static Cluster cluster = null;
 
 
 	/**
@@ -30,7 +33,15 @@ public class Cluster {
      * Retrieves the single instance of this class.
      */
 	public static Cluster getInstance() {
-		return null;
+		if (isDone == false) {
+			synchronized (Cluster.class) {
+				if (isDone == false) {
+					cluster = new Cluster();
+					isDone = true;
+				}
+			}
+		}
+		return cluster;
 	}
 
 

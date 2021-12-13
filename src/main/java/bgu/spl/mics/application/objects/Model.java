@@ -24,5 +24,7 @@ public class Model {
 
     }
 
+    public Data getData(){ return data;}
+
 
 }

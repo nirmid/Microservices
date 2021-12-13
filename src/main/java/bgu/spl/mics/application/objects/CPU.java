@@ -13,10 +13,11 @@ public class CPU {
     private Cluster cluster; // should be instance
     private long time;
 
-    public CPU(int _cores,int _time){ //constractor
+    public CPU(int _cores){ //constractor
         data = new LinkedList<DataBatch>();
         cores = _cores;
         cluster = Cluster.getInstance();
+        time = 1;
 
     }
 
@@ -66,11 +67,10 @@ public class CPU {
 
     /**
      * update time
-     * @param _time time as received from TimerService
      * @post time = _time
      */
-    public void updateTime(int _time){
-        time=_time;
+    public void updateTime(){
+        time=time +1;
         notifyAll();
     } //  update time according to TimerService
     public int getCores(){return cores;} // returns cores
