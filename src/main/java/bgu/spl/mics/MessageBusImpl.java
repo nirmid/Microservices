@@ -17,6 +17,8 @@ public class MessageBusImpl implements MessageBus {
 	private HashMap<MicroService, LinkedList<Message>> microMap; // holds messages queues for each microservice
 	private HashMap<Event,Future> futureMap; // holds future that is associated with an event
 	private static boolean isDone = false;
+	private HashMap<MicroService, LinkedList<Class<? extends Message>>> registers;
+
 
 	private MessageBusImpl(){
 		eventMap = new HashMap<Class<? extends Event>, LinkedList<MicroService>>();
@@ -37,6 +39,16 @@ public class MessageBusImpl implements MessageBus {
 			synchronized(list) {
 				list.addLast(m);
 			}
+			if (registers.containsKey(m))
+				synchronized (registers) {
+					registers.get(m).add(type);
+				}
+			else {
+				LinkedList<Class<? extends Message>> mList = new LinkedList<Class<? extends Message>>();
+				synchronized (registers) {
+					registers.put(m, mList);
+				}
+			}
 		}
 		else{
 			synchronized(eventMap) {
@@ -45,12 +57,26 @@ public class MessageBusImpl implements MessageBus {
 					synchronized (list) {
 						list.addLast(m);
 					}
+					if (registers.containsKey(m))
+						synchronized (registers) {
+							registers.get(m).add(type);
+						}
+					else {
+						LinkedList<Class<? extends Message>> mList = new LinkedList<Class<? extends Message>>();
+						synchronized (registers) {
+							registers.put(m, mList);
+						}
+					}
 				}
 				else{
-						LinkedList<MicroService> list = new LinkedList<MicroService>();
-						list.addLast(m);
-						eventMap.put(type, list);
+					LinkedList<MicroService> list = new LinkedList<MicroService>();
+					list.addLast(m);
+					eventMap.put(type, list);
+					LinkedList<Class<? extends Message>> mList = new LinkedList<Class<? extends Message>>();
+					synchronized (registers) {
+						registers.put(m, mList);
 					}
+				}
 			}
 
 		}
@@ -71,17 +97,44 @@ public class MessageBusImpl implements MessageBus {
 			synchronized (list) {
 				list.addLast(m);
 			}
-		} else {
+			if (registers.containsKey(m))
+				synchronized (registers) {
+					registers.get(m).add(type);
+				}
+			else {
+				LinkedList<Class<? extends Message>> mList = new LinkedList<Class<? extends Message>>();
+				synchronized (registers) {
+					registers.put(m, mList);
+				}
+			}
+		}
+		else {
 			synchronized (broadcastMap) {
 				if (broadcastMap.get(type) != null) {
 					LinkedList<MicroService> list = broadcastMap.get(type);
 					synchronized (list) {
 						list.addLast(m);
 					}
-				} else {
+
+					if (registers.containsKey(m))
+						synchronized (registers) {
+							registers.get(m).add(type);
+						}
+					else {
+						LinkedList<Class<? extends Message>> mList = new LinkedList<Class<? extends Message>>();
+						synchronized (registers) {
+							registers.put(m, mList);
+						}
+					}
+				}
+				else {
 					LinkedList<MicroService> list = new LinkedList<MicroService>();
 					list.addLast(m);
 					broadcastMap.put(type, list);
+					LinkedList<Class<? extends Message>> mList = new LinkedList<Class<? extends Message>>();
+					synchronized (registers) {
+						registers.put(m, mList);
+					}
 				}
 			}
 
@@ -171,14 +224,9 @@ public class MessageBusImpl implements MessageBus {
 	 */
 	@Override
 	public void unregister(MicroService m) {
-		for (Map.Entry<Class<? extends Event>, LinkedList<MicroService>> iter : eventMap.entrySet() )
-			synchronized (iter.getValue()) {
-				(iter.getValue()).remove(m);
-			}
-        for (Map.Entry<Class<? extends Broadcast>, LinkedList<MicroService>> iter : broadcastMap.entrySet() )
-			synchronized (iter.getValue()) {
-				(iter.getValue()).remove(m);
-			}
+		LinkedList<Class<? extends Message>> mList = registers.get(m);
+		for (Class<? extends Message> t : mList)
+
 		synchronized (microMap) {
 			microMap.remove(m);
 		}

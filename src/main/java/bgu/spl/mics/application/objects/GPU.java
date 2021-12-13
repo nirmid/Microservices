@@ -99,7 +99,7 @@ public class GPU {
     public void insertProcessed(DataBatch processed){
         if(curCapacity < 0)
             throw new IllegalStateException(" cannot except new processed datbatches");
-
+        
 
     }
 
