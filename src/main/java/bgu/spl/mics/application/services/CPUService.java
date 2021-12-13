@@ -10,6 +10,7 @@ import bgu.spl.mics.MicroService;
  * You MAY change constructor signatures and even add new public constructors.
  */
 public class CPUService extends MicroService {
+    private long time;
     public CPUService(String name) {
         super("Change_This_Name");
         // TODO Implement this
@@ -17,7 +18,7 @@ public class CPUService extends MicroService {
 
     @Override
     protected void initialize() {
-        // TODO Implement this
+
 
     }
 }
