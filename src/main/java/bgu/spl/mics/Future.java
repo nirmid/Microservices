@@ -27,9 +27,12 @@ public class Future<T> {
      * @return return the result of type T if it is available, if not wait until it is available.
 	 * @post returns valid result
      */
-	public T get() throws InterruptedException {
-		while(!isDone())
-			synchronized (this){wait();}
+	public T get() {
+		while(!isDone()) {
+			try {
+				wait();
+			} catch (InterruptedException e) {}
+		}
 		return result;
 	}
 	

@@ -37,10 +37,13 @@ public class CPU {
             DataBatch currentData = cluster.getDataBatch();
             long currentTime = time;
             long processTime = processTime(currentData.getType());
-            while (time - currentTime < processTime)
+            while ( time - currentTime < processTime)
                 try{
                     wait();
-                }catch (InterruptedException e){}
+                }catch (InterruptedException e){
+                    if (terminated)
+                        processData();
+                }
             cluster.receiveToTrain(currentData);
         }
     }
@@ -70,7 +73,9 @@ public class CPU {
         processData();
 
     }
-    public void terminateCpu(){terminated = true;}
+    public void terminateCpu(){
+        terminated = true;
+    notifyAll();}
     public int getCores(){return cores;} // returns cores
     public long getTime(){return time;} // returns time
 

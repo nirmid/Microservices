@@ -2,13 +2,13 @@ package bgu.spl.mics.application.messages;
 
 import bgu.spl.mics.Event;
 import bgu.spl.mics.application.objects.Model;
+import bgu.spl.mics.application.objects.Student;
 
-public class TestModelEvent implements Event {
-    public enum studentType{Msc , PhD}
-    private studentType type;
+public class TestModelEvent implements Event <String> {
+    private Student.Degree type;
     private Model model;
 
-    public TestModelEvent(studentType _type, Model _model){
+    public TestModelEvent(Student.Degree _type, Model _model){
         type = _type;
         model = _model;
     }
@@ -17,7 +17,7 @@ public class TestModelEvent implements Event {
         return model;
     }
 
-    public studentType getType() {
+    public Student.Degree getType() {
         return type;
     }
 }

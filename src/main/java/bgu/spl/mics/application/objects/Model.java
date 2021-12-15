@@ -27,6 +27,7 @@ public class Model {
 
     public Data getData(){ return data;}
     public void setResult(results result){this.result = result;}
+    public results getResult(){return result;}
     public void setStatus(status status){this.status_ = status;}
 
     public String toString(){
