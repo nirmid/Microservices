@@ -1,6 +1,11 @@
 package bgu.spl.mics.application.services;
 
+import bgu.spl.mics.Event;
+import bgu.spl.mics.Future;
 import bgu.spl.mics.MicroService;
+import bgu.spl.mics.application.messages.*;
+import bgu.spl.mics.application.objects.Model;
+import bgu.spl.mics.application.objects.Student;
 
 /**
  * Student is responsible for sending the {@link TrainModelEvent},
@@ -12,14 +17,60 @@ import bgu.spl.mics.MicroService;
  * You MAY change constructor signatures and even add new public constructors.
  */
 public class StudentService extends MicroService {
-    public StudentService(String name) {
-        super("Change_This_Name");
-        // TODO Implement this
+
+    private Student student;
+    private boolean terminated;
+
+
+    public StudentService(String name, Student _student) {
+        super(name);
+        student = _student;
+        boolean terminated = false;
     }
 
     @Override
     protected void initialize() {
-        // TODO Implement this
+        subscribeBroadcast(TerminateBroadcast.class,(t) -> {
+            terminated = true;
+            student.terminate();
+            terminate();
+        });
+        subscribeBroadcast(PublishConferenceBroadcast.class,(t) -> {
+            int toRead = t.getConference().getNumOfPublications();
+            student.setPapersRead(toRead);
+        });
+        subscribeBroadcast(TickBroadcast.class, (t)-> {
+            notifyAll();
+        });
 
+        Thread send = new Thread (()-> {
+            while (!terminated && !student.getModels().isEmpty()) {
+                Model curModel;
+                synchronized (student.getModels()) {
+                    curModel = (Model) student.getModels().removeFirst();
+                }
+                Future newFuture = sendEvent(new TrainModelEvent(curModel));
+                while (!terminated && !newFuture.isDone()) {
+                    try {
+                        wait();
+                    } catch (InterruptedException e) {
+                    }
+                }
+                if (!terminated) {
+                    sendEvent(new TestModelEvent(student.getStatus(), curModel));
+                    while (!terminated && curModel.getResult() == Model.results.None) {
+                        try {
+                            wait();
+                        } catch (InterruptedException e) { }
+                    }
+                    if (!terminated) {
+                        if (curModel.getResult() == Model.results.Good)
+                            sendEvent(new PublishResultsEvent(curModel));
+                        student.receiveTrainedModels(curModel);
+                    }
+                }
+            }
+        });
     }
+
 }

@@ -16,7 +16,7 @@ public class CPU {
     private  long processTime;//
     private DataBatch currentData;//
 
-    public CPU(int _cores){
+    public CPU(int _cores){ //constractor
         cores = _cores;
         cluster = Cluster.getInstance();
         time = 1;
@@ -42,7 +42,10 @@ public class CPU {
                 try{
                     cluster.addCPUTime(1); // STATISTICS
                     wait();
-                }catch (InterruptedException e){}
+                }catch (InterruptedException e){
+                    if (terminated)
+                        processData();
+                }
             cluster.addDataBatchProcess(); // STATISTICS
             cluster.receiveToTrain(currentData);
         }
@@ -63,17 +66,19 @@ public class CPU {
      * update time
      * @post time = _time
      */
-    public void updateTime(){  //  update time according to TimerService
+    public void updateTime(){
         time=time +1;
         notifyAll();
-    }
+    } //  update time according to TimerService
 
     public void updateTime2(){
         time = time+1;
         processData();
 
     }
-    public void terminateCpu(){terminated = true;}
+    public void terminateCpu(){
+        terminated = true;
+    notifyAll();}
     public int getCores(){return cores;} // returns cores
     public long getTime(){return time;} // returns time
 

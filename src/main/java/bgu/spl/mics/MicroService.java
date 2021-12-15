@@ -40,21 +40,21 @@ public abstract class MicroService implements Runnable {
     }
 
     /**
-     * Subscribes to events of type {@code type} with the callback
-     * {@code callback}. This means two things:
-     * 1. Subscribe to events in the singleton event-bus using the supplied
-     * {@code type}
-     * 2. Store the {@code callback} so that when events of type {@code type}
-     * are received it will be called.
-     * <p>
-     * For a received message {@code m} of type {@code type = m.getClass()}
-     * calling the callback {@code callback} means running the method
-     * {@link Callback#call(java.lang.Object)} by calling
-     * {@code callback.call(m)}.
-     * <p>
-     * @param <E>      The type of event to subscribe to.
-     * @param <T>      The type of result expected for the subscribed event.
-     * @param type     The {@link Class} representing the type of event to
+     * Subscrm <T>      The type of result expected for the subscribed event.
+     * @paraibes to events of type {@code type} with the callback
+     *      * {@code callback}. This means two things:
+     *      * 1. Subscribe to events in the singleton event-bus using the supplied
+     *      * {@code type}
+     *      * 2. Store the {@code callback} so that when events of type {@code type}
+     *      *      * are received it will be called.
+     *      * <p>
+     *      * For a received message {@code m} of type {@code type = m.getClass()}
+     *      * calling the callback {@code callback} means running the method
+     *      * {@link Callback#call(java.lang.Object)} by calling
+     *      * {@code callback.call(m)}.
+     *      * <p>
+     *      * @param <E>      The type of event to subscribe to.
+     *      * @param type     The {@link Class} representing the type of event to
      *                 subscribe to.
      * @param callback The callback that should be called when messages of type
      *                 {@code type} are taken from this micro-service message
