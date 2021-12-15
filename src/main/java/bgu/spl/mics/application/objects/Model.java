@@ -29,5 +29,9 @@ public class Model {
     public void setResult(results result){this.result = result;}
     public void setStatus(status status){this.status_ = status;}
 
+    public String toString(){
+        return null;
+    }
+
 
 }

@@ -1,19 +1,16 @@
 package bgu.spl.mics.application.messages;
 
 import bgu.spl.mics.Event;
-
-import java.util.LinkedList;
+import bgu.spl.mics.application.objects.Model;
 
 public class PublishResultsEvent implements Event {
-    private LinkedList<String> modelNames;
+    private Model model;
 
-    public PublishResultsEvent(){
-        modelNames = new LinkedList<String>();
-    }
-    public void addModelName(String name){
-        synchronized (modelNames){
-            modelNames.add(name);
-        }
+    public PublishResultsEvent(Model model){
+        this.model = model;
     }
 
+    public Model getModel() {
+        return model;
+    }
 }

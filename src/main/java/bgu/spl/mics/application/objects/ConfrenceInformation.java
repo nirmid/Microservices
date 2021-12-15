@@ -11,6 +11,36 @@ public class ConfrenceInformation {
     private String name;
     private int date;
     private LinkedList<Model> models;
+    private int numOfPublications;
 
-    public ConfrenceInformation(){};
+    public ConfrenceInformation(String name,int date){
+        this.name = name;
+        this.date = date;
+        models = new LinkedList<Model>();
+        numOfPublications = 0;
+    }
+
+    public void addModel(Model model){
+        synchronized (models){
+            models.add(model);
+            numOfPublications = numOfPublications +1;
+        }
+    }
+
+    public int getDate() {
+        return date;
+    }
+
+    public LinkedList<Model> getModels() {
+        return models;
+    }
+
+    public int getNumOfPublications() {
+        return numOfPublications;
+    }
+
+    public String toString(){
+
+        return null;
+    }
 }
