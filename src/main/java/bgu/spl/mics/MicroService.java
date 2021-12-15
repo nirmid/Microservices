@@ -149,6 +149,7 @@ public abstract class MicroService implements Runnable {
         this.terminated = true;
     }
 
+
     /**
      * @return the name of the service - the service name is given to it in the
      *         construction time and is used mainly for debugging purposes.
@@ -163,6 +164,7 @@ public abstract class MicroService implements Runnable {
      */
     @Override
     public final void run() {
+        bus.register(this);
         initialize();
         while (!terminated) {
             try {

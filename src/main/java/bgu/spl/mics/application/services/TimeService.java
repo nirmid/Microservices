@@ -1,9 +1,8 @@
 package bgu.spl.mics.application.services;
 
-import bgu.spl.mics.Callback;
 import bgu.spl.mics.MicroService;
+import bgu.spl.mics.application.messages.TerminateBroadcast;
 import bgu.spl.mics.application.messages.TickBroadcast;
-import bgu.spl.mics.example.messages.ExampleBroadcast;
 
 import java.util.Timer;
 import java.util.TimerTask;
@@ -18,23 +17,45 @@ import java.util.TimerTask;
  * You MAY change constructor signatures and even add new public constructors.
  */
 public class TimeService extends MicroService{
-	private TimerTask timer;
+	private TimerTask timerTask;
+	private Timer timer;
 	private long currentTime;
 	private int duration;
 	private int speed;
+	private boolean isDone;
 
 	public TimeService(int _duration,int _speed) {
 		super("TimerService");
 		speed = _speed;
 		duration = _duration;
-		currentTime = 0 ;
-		// TODO Implement this
-
+		currentTime = 1;
+		timer = new Timer();
+		isDone = false;
+		timerTask = new TimerTask() {
+			@Override
+			public void run() {
+				if (!isDone) {
+					sendBroadcast(new TickBroadcast());
+					currentTime = currentTime + 1;
+					if (currentTime == duration)
+						isDone = true;
+				}
+				else {
+					sendBroadcast(new TerminateBroadcast());
+					timer.cancel();
+				}
+			}
+		};
 	}
 	@Override
 	protected void initialize() {
-
-		// TODO Implement this
+		subscribeBroadcast(TerminateBroadcast.class,(t)-> {
+			terminate();
+		});
+		timer.scheduleAtFixedRate(timerTask,speed,speed);
 	}
 
+
+
 }
+

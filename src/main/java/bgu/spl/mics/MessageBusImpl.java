@@ -1,5 +1,8 @@
 package bgu.spl.mics;
 
+import bgu.spl.mics.application.objects.GPU;
+import bgu.spl.mics.application.services.GPUService;
+
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.*;
@@ -168,7 +171,7 @@ public class MessageBusImpl implements MessageBus {
         LinkedList<MicroService> subscribers = broadcastMap.get(b.getClass());
         for (MicroService m : subscribers)
            synchronized (microMap.get(m)){
-			(microMap.get(m)).addLast(b);
+			(microMap.get(m)).addFirst(b);
 		   }
 		notifyAll();
 	}
@@ -243,7 +246,7 @@ public class MessageBusImpl implements MessageBus {
 	 */
 	@Override
 	public Message awaitMessage(MicroService m) throws InterruptedException {
-		while (microMap.get(m).isEmpty()) {
+		while (microMap.get(m).isEmpty() || (m.getClass().isInstance(GPU.class) && !((GPUService)m).isDone()) ) {
 			wait();
 		}
 		synchronized (microMap.get(m)) {

@@ -9,11 +9,8 @@ package bgu.spl.mics.application.objects;
 
 public class Model {
 
-    enum status {PreTrained, Training, Trained, Tested}
-    enum results {None, Good, Bad}
-
-
-
+    public enum status {PreTrained, Training, Trained, Tested}
+    public enum results {None, Good, Bad}
     private String name;
     private Data data;
     private Student student;
@@ -25,6 +22,8 @@ public class Model {
     }
 
     public Data getData(){ return data;}
+    public void setResult(results result){this.result = result;}
+    public void setStatus(status status){this.status = status;}
 
 
 }

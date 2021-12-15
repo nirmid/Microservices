@@ -13,7 +13,6 @@ public class CPUTest {
     @Before
     public void setUp() throws Exception {
         LinkedList<DataBatch> data=new LinkedList<DataBatch>();
-        Cluster cluster=new Cluster();
         cpu=new CPU(1);
     }
 

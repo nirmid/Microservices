@@ -24,7 +24,8 @@ public class GPU {
     private LinkedList<DataBatch> preTrained; // databatch that has been processed by a cpu
     private LinkedList<DataBatch> preProcessed; // databatch that is needed to be processed by a cpu
     private boolean isDone; // does the gpu finished training current model
-
+    private Object lock1 = new Object();
+    private int curIdx;
 
 
     public GPU (Type type){
@@ -57,13 +58,23 @@ public class GPU {
      *
      * @param model
      */
+
     public void setModel(Model model) throws InterruptedException {
         this.model = model;
         curCapacity = capacity;
-        splitData();
-        sendToCluster();
         isDone = false;
+        curIdx = 0;
+        Thread split = new Thread(()->
+                splitData());
+        Thread send = new Thread(()->
+                sendToCluster());
+        Thread train = new Thread(()->
+                train());
+        split.join();
+        send.join();
+        train.join();
     }
+
     public void updateTime(){
         time = time + 1;
         notifyAll();
@@ -71,29 +82,35 @@ public class GPU {
 
     private void splitData(){
         Data data = model.getData();
-        int currentSize = 0 ;
-        while(currentSize < data.getSize()){
+        while(curIdx < data.getSize()){
             synchronized (preProcessed){
-                preProcessed.addLast(new DataBatch(data,currentSize));
+                preProcessed.addLast(new DataBatch(data,curIdx));
             }
-            currentSize = currentSize + 1000;
+            notifyAll();
+            curIdx = curIdx + 1000;
         }
     }
 
     /**
      *send data to be processed only if there is enough space to receive it back
      */
-    private void sendToCluster() throws InterruptedException {
-        while (!preProcessed.isEmpty()){
-            while ( curCapacity < 0)
-                wait();
-            curCapacity = curCapacity -1;
-            synchronized (preTrained) {
-                cluster.receiveProcessed(preTrained.removeFirst());
+    private void sendToCluster() {
+        while (curIdx < model.getData().getSize() || !preProcessed.isEmpty() ) {
+            while (curCapacity < 0){
+                try {
+                    wait();
+                } catch (InterruptedException e) {}
+            }
+            synchronized (lock1) {
+                if (curCapacity > 0) {
+                    curCapacity = curCapacity - 1;
+                    synchronized (preProcessed) {
+                        cluster.receiveToProcess(preProcessed.removeFirst(),this);
+                    }
+                }
             }
         }
     }
-
 
     /**
      * get processed data from cluster and insert it into preTrained collection
@@ -103,14 +120,12 @@ public class GPU {
      *
      * @param processed
      */
-    public void insertProcessed(DataBatch processed) throws InterruptedException {
+    public void insertProcessed(DataBatch processed)  {
         if(curCapacity < 0)
             throw new IllegalStateException(" cannot except new processed databatches");
-        curCapacity = curCapacity +1;
         synchronized (preTrained){
             preTrained.addLast(processed);
         }
-        train();
     }
 
 
@@ -119,18 +134,29 @@ public class GPU {
      *  number of ticks required deteremined by GPU type
      *  when finished training all data, need to finish event
      */
-    private void train() throws InterruptedException {
-        while(preTrained.isEmpty())
-            wait();
-        long currentTime = time;
-        while(time - currentTime < tick)
-            wait();
-        model.getData().updateProcess(1000);
-        curCapacity = curCapacity - 1;
-        if(model.getData().getSize() == model.getData().getProcessed()) {
-            isDone = true;
+    private void train() {
+        while(!isDone) {
+            while (preTrained.isEmpty()) {
+                try {
+                    wait();
+                }
+                catch (InterruptedException e) {}
+            }
+            long currentTime = time;
+            while (time - currentTime < tick) {
+                try {
+                    wait();
+                }
+                catch (InterruptedException e) {}
+            }
+            model.getData().updateProcess(1000);
+            synchronized (lock1) {
+                curCapacity = curCapacity + 1;
+            }
+            if (model.getData().getSize() <= model.getData().getProcessed()) {
+                isDone = true;
+            }
         }
-
     }
     public boolean isDone(){ return isDone;}
     public int getCapacity(){return capacity;}

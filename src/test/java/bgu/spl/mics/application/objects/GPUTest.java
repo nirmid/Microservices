@@ -10,7 +10,6 @@ public class GPUTest {
 
     @Before
     public void setUp() throws Exception {
-        Cluster cluster=new Cluster();
         gpu=new GPU(GPU.Type.GTX1080);
     }
 
