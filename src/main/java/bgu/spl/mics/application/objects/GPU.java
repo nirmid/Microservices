@@ -32,6 +32,7 @@ public class GPU {
         this.type = type;
         cluster = Cluster.getInstance();
         time = 1;
+        model = null;
         switch (type){
             case RTX2080:
                 capacity = 16;
@@ -50,6 +51,7 @@ public class GPU {
         }
         curCapacity = capacity;
         isDone = false;
+        cluster.addGPU(this);
     }
     /**
      * @pre preTrained.isEmpty()
@@ -66,10 +68,13 @@ public class GPU {
         curIdx = 0;
         Thread split = new Thread(()->
                 splitData());
+        split.start();
         Thread send = new Thread(()->
                 sendToCluster());
+        send.start();
         Thread train = new Thread(()->
                 train());
+        send.start();
         split.join();
         send.join();
         train.join();
@@ -145,16 +150,19 @@ public class GPU {
             long currentTime = time;
             while (time - currentTime < tick) {
                 try {
+                    cluster.addGPUTime(1); // STATISTICS
                     wait();
                 }
                 catch (InterruptedException e) {}
             }
             model.getData().updateProcess(1000);
+
             synchronized (lock1) {
                 curCapacity = curCapacity + 1;
             }
             if (model.getData().getSize() <= model.getData().getProcessed()) {
                 isDone = true;
+                cluster.addModelTrained(model.getName());
             }
         }
     }

@@ -37,6 +37,7 @@ public class CPUService extends MicroService {
         });
         Thread process = new Thread (()->
                 cpu.processData());
+        process.start();
     }
 
 

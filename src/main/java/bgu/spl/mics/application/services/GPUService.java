@@ -43,11 +43,12 @@ public class GPUService extends MicroService {
                             isDone = false;
                             gpu.setModel(t.getModel());
                             t.getModel().setStatus(Model.status.Trained);
-                            complete(t, "finished"); // what type of result
+                            complete(t, "finished");
                             isDone = true;
                         } catch (InterruptedException e) {
                         }
                     });
+                    set.start();
                 });
         subscribeEvent(TestModelEvent.class,(t)->{
             double rnd = Math.random();

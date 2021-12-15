@@ -25,7 +25,15 @@ public class Cluster {
 	private LinkedList<GPU> GPUS; // collection of GPUS
 	private LinkedList<DataBatch> toProcess;
 	private PriorityQueue<CpuPair> cpuPairs; // no need
-	// statistics ?
+	// statistics
+	private LinkedList<String> namesModelTrained;
+	private int dataBatchProcess;
+	private int CPUTime;
+	private int GPUTime;
+	private Object dataBatchP = new Object();
+	private Object CPUT = new Object();
+	private Object GPUT = new Object();
+
 
 
 	private Cluster(){
@@ -34,6 +42,10 @@ public class Cluster {
 		cpuPairs = new PriorityQueue<CpuPair>(); // no need
 		dataBMap = new HashMap<DataBatch,GPU>();
 		toProcess = new LinkedList<DataBatch>();
+		namesModelTrained = new LinkedList<String>();
+		dataBatchProcess = 0;
+		CPUTime = 0;
+		GPUTime = 0;
 	}
 	public void addCPU(CPU cpu){
 		synchronized (CPUS) {
@@ -44,6 +56,30 @@ public class Cluster {
 	public void addGPU(GPU gpu){
 		synchronized (GPUS) {
 			GPUS.add(gpu);
+		}
+	}
+
+	public void addModelTrained(String name){ // STATISTICS
+		synchronized (namesModelTrained){
+			namesModelTrained.addLast(name);
+		}
+	}
+
+	public void addDataBatchProcess(){ // STATISTICS
+		synchronized (dataBatchP){
+			dataBatchProcess = dataBatchProcess +1;
+		}
+	}
+
+	public void addCPUTime(int time){ // STATISTICS
+		synchronized (CPUT) {
+			CPUTime = CPUTime + time;
+		}
+	}
+
+	public void addGPUTime(int time){ // STATISTICS
+		synchronized (GPUT) {
+			GPUTime = GPUTime + time;
 		}
 	}
 

@@ -26,6 +26,11 @@ public class Model {
     }
 
     public Data getData(){ return data;}
+
+    public String getName() {
+        return name;
+    }
+
     public void setResult(results result){this.result = result;}
     public void setStatus(status status){this.status_ = status;}
 

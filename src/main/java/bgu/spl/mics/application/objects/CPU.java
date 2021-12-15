@@ -16,14 +16,15 @@ public class CPU {
     private  long processTime;//
     private DataBatch currentData;//
 
-    public CPU(int _cores){ //constractor
+    public CPU(int _cores){
         cores = _cores;
         cluster = Cluster.getInstance();
         time = 1;
-        processTime = 0;
+        processTime = 0; // only needed for Nir's implement
         currentTime = 1;
         terminated = false;
         currentData = null;
+        cluster.addCPU(this);
 
     }
 
@@ -39,8 +40,10 @@ public class CPU {
             long processTime = processTime(currentData.getType());
             while (time - currentTime < processTime)
                 try{
+                    cluster.addCPUTime(1); // STATISTICS
                     wait();
                 }catch (InterruptedException e){}
+            cluster.addDataBatchProcess(); // STATISTICS
             cluster.receiveToTrain(currentData);
         }
     }
@@ -60,10 +63,10 @@ public class CPU {
      * update time
      * @post time = _time
      */
-    public void updateTime(){
+    public void updateTime(){  //  update time according to TimerService
         time=time +1;
         notifyAll();
-    } //  update time according to TimerService
+    }
 
     public void updateTime2(){
         time = time+1;
