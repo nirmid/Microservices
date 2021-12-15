@@ -53,7 +53,7 @@ public class GPUService extends MicroService {
         subscribeEvent(TestModelEvent.class,(t)->{
             double rnd = Math.random();
             switch (t.getType()){
-                case Msc:
+                case MSc:
                     if(rnd < 0.8) {
                         complete(t, Model.results.Good);
                         t.getModel().setResult(Model.results.Good);
