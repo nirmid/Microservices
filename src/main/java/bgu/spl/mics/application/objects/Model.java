@@ -14,20 +14,20 @@ public class Model {
     private String name;
     private Data data;
     private Student student;
-    private status status;   // student name
+    private status status_;   // student name
     private results result;
 
     public Model  (String name, Data data, Student student){
         this.name = name;
         this.data = data;
         this.student = student;
-        status = Model.status.PreTrained;
+        status_ = Model.status.PreTrained;
         result = results.None;
     }
 
     public Data getData(){ return data;}
     public void setResult(results result){this.result = result;}
-    public void setStatus(status status){this.status = status;}
+    public void setStatus(status status){this.status_ = status;}
 
 
 }

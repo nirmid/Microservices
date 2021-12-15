@@ -15,4 +15,5 @@ public class PublishResultsEvent implements Event {
             modelNames.add(name);
         }
     }
+
 }

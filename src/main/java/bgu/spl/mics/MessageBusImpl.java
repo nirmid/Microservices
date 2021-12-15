@@ -157,7 +157,6 @@ public class MessageBusImpl implements MessageBus {
 		if(futureMap.get(e) == null)
 			throw new IllegalArgumentException("event e does not have associated future");
 		futureMap.get(e).resolve(result);
-
 	}
 
 	/**
@@ -194,12 +193,13 @@ public class MessageBusImpl implements MessageBus {
 			futureMap.put(e, future);
 		}
 		LinkedList<MicroService> list = eventMap.get(e.getClass());
+		MicroService m;
 		synchronized (list) {
-			MicroService m = list.removeFirst();
+			m = list.removeFirst();
 			list.addLast(m);
-			synchronized (microMap.get(m)) {
-				microMap.get(m).addLast(e);
-			}
+		}
+		synchronized (microMap.get(m)) {
+			microMap.get(m).addLast(e);
 		}
 		notifyAll();
 		return future;

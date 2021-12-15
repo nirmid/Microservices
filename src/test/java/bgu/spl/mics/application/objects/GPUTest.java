@@ -20,7 +20,7 @@ public class GPUTest {
         Data d2=new Data();
         DataBatch data1= new DataBatch(d1,0);
         DataBatch data2= new DataBatch(d2,0);
-        Model model = new Model("x",d1,new Student(), Model.status.PreTrained, Model.results.None);
+        Model model = new Model("x",d1,new Student());
         gpu.setModel(model);
         assertThrows("expected Exception for different data",Exception.class,() -> gpu.insertProcessed(data2));
         //post
@@ -37,10 +37,10 @@ public class GPUTest {
     public void setModel() throws InterruptedException {
         Data d1=new Data();
         DataBatch data1= new DataBatch(d1,0);
-        Model model = new Model("x",d1,new Student(), Model.status.PreTrained, Model.results.None);
+        Model model = new Model("x",d1,new Student());
         gpu.setModel(model);
         gpu.insertProcessed(data1);
-        Model model2 = new Model("y",new Data(),new Student(), Model.status.PreTrained, Model.results.None);
+        Model model2 = new Model("y",new Data(),new Student());
         assertThrows("cannot set model to gpu while processing another model",Exception.class,()-> gpu.setModel(model2));
         assertEquals(model,gpu.getModel());
 

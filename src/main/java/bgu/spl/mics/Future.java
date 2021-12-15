@@ -68,11 +68,15 @@ public class Future<T> {
 	 * @pre unit is legal TimeUnit && timeout != null && timeout > 0
 	 * @post return legal result if available
      */
-	public T get(long timeout, TimeUnit unit) throws InterruptedException {
-		if(result == null) {
-			synchronized (this){unit.sleep(timeout);}
+	public T get(long timeout, TimeUnit unit) {
+		if (result == null) {
+			try {
+				synchronized (this) {
+					unit.sleep(timeout);
+				}
+			} catch (InterruptedException e) {
+			}
 		}
-		return result;
+			return result;
 	}
-
 }
