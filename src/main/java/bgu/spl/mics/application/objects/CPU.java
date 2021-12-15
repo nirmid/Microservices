@@ -9,17 +9,21 @@ import java.util.LinkedList;
  */
 public class CPU {
     private int cores;
-    private LinkedList<DataBatch> data;
     private Cluster cluster; // should be instance
     private long time;
     private boolean terminated;
+    private long currentTime;//
+    private  long processTime;//
+    private DataBatch currentData;//
 
     public CPU(int _cores){ //constractor
-        data = new LinkedList<DataBatch>();
         cores = _cores;
         cluster = Cluster.getInstance();
         time = 1;
+        processTime = 0;
+        currentTime = 1;
         terminated = false;
+        currentData = null;
 
     }
 
@@ -28,45 +32,29 @@ public class CPU {
      * @pre data != null && data.getFirst() != null
      * @post @pre(data.getFirst()) != data.getFirst()
       */
-    public void processData() throws InterruptedException {
+    public void processData() {
         while (!terminated) {
-            while (data.isEmpty())
-                wait();
+            DataBatch currentData = cluster.getDataBatch();
             long currentTime = time;
-            DataBatch currentData;
-            synchronized (data) {
-                currentData = data.removeFirst();
-            }
-            long processTime = prcoessTime(currentData.getType());
-            while (time - currentTime < processTime)
-                wait();
-            cluster.receiveToTrain(currentData);
-        }
-    }
-    public void processData2(){ // need to be changes
-            DataBatch currentData = cluster.getDataBatach();
-            long currentTime = time;
-            synchronized (data) {
-                currentData = data.removeFirst();
-            }
-            long processTime = prcoessTime(currentData.getType());
+            long processTime = processTime(currentData.getType());
             while (time - currentTime < processTime)
                 try{
                     wait();
                 }catch (InterruptedException e){}
+            cluster.receiveToTrain(currentData);
         }
-
-    /**
-     * add dataBatch sent from cluster to data
-     * @pre _data != null
-     * @post data.getLast() == _data;
-     */
-    public void recieveDataBatch(DataBatch _data){
-        synchronized (data){
-            data.addLast(_data);
-        }
-        notifyAll();
     }
+
+//    public void processData2() {
+//        if (time - currentTime >=  processTime) {
+//            cluster.receiveToTrain(currentData);
+//            currentData = cluster.getDataBatch();
+//            currentTime = time;
+//            processTime = processTime(currentData.getType());
+//        }
+//    }
+
+
 
     /**
      * update time
@@ -74,15 +62,19 @@ public class CPU {
      */
     public void updateTime(){
         time=time +1;
-        processData2(); // will only need to update
         notifyAll();
     } //  update time according to TimerService
+
+    public void updateTime2(){
+        time = time+1;
+        processData();
+
+    }
     public void terminateCpu(){terminated = true;}
     public int getCores(){return cores;} // returns cores
-    public LinkedList<DataBatch> getData(){return data;} // returns data
     public long getTime(){return time;} // returns time
 
-    public long prcoessTime(Data.Type type){
+    public long processTime(Data.Type type){
         long processTime;
         switch (type) {
             case Images:

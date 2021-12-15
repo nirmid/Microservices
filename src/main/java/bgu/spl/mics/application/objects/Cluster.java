@@ -25,7 +25,6 @@ public class Cluster {
 	private LinkedList<GPU> GPUS; // collection of GPUS
 	private LinkedList<DataBatch> toProcess;
 	private PriorityQueue<CpuPair> cpuPairs; // no need
-
 	// statistics ?
 
 
@@ -36,19 +35,39 @@ public class Cluster {
 		dataBMap = new HashMap<DataBatch,GPU>();
 		toProcess = new LinkedList<DataBatch>();
 	}
-	public void addCPU(CPU cpu){}  // need to add cpu to CPUS and create CPUpair and add it priorityQueue
+	public void addCPU(CPU cpu){
+		synchronized (CPUS) {
+			CPUS.add(cpu);
+		}
+	}  // need to add cpu to CPUS and create CPUpair and add it priorityQueue
 
-	public void addGPU(GPU gpu){}
+	public void addGPU(GPU gpu){
+		synchronized (GPUS) {
+			GPUS.add(gpu);
+		}
+	}
 
-	public DataBatch getDataBatach(){  // function used by a cpu to receive a databatch to process
+	public DataBatch getDataBatch(){  // function used by a cpu to receive a databatch to process
 		while(toProcess.isEmpty())
 			try{
 				wait();
 			}catch (InterruptedException e){}
 		synchronized (toProcess){
 				if(toProcess.isEmpty())
-					getDataBatach();
+					getDataBatch();
 				return toProcess.removeFirst();
+		}
+	}
+
+	public DataBatch getDataBatach2(){  // function used by a cpu to receive a databatch to process
+		while(toProcess.isEmpty())
+			try{
+				wait();
+			}catch (InterruptedException e){}
+		synchronized (toProcess){
+			if(toProcess.isEmpty())
+				getDataBatch();
+			return toProcess.removeFirst();
 		}
 	}
 
@@ -58,16 +77,17 @@ public class Cluster {
 		}
 		synchronized (toProcess){
 			toProcess.add(dataBatch);
-			notifyAll();
 		}
-		CPU cpu; // no need
-		synchronized (cpuPairs) {
-			CpuPair cpuPair = cpuPairs.poll();
-			cpu = cpuPair.getCpu();
-			cpuPair.setTicks(cpuPair.getTicks() + cpu.prcoessTime(dataBatch.getType()));
-			cpuPairs.add(cpuPair);
-		}
-		cpu.recieveDataBatch(dataBatch);
+		notifyAll();
+
+//		CPU cpu; // no need
+//		synchronized (cpuPairs) {
+//			CpuPair cpuPair = cpuPairs.poll();
+//			cpu = cpuPair.getCpu();
+//			cpuPair.setTicks(cpuPair.getTicks() + cpu.processTime(dataBatch.getType()));
+//			cpuPairs.add(cpuPair);
+//		}
+//		cpu.recieveDataBatch(dataBatch);
 	}
 
 
@@ -76,12 +96,13 @@ public class Cluster {
 	 * @param dataBatch
 	 */
 	public void receiveToTrain(DataBatch dataBatch){
-		GPU gpu = dataBMap.get(dataBatch);
-		gpu.insertProcessed(dataBatch);
-		synchronized (dataBMap){
-			dataBMap.remove(dataBatch);
-		}
-
+//		if ( dataBatch != null) {
+			GPU gpu = dataBMap.get(dataBatch);
+			synchronized (dataBMap) {
+				dataBMap.remove(dataBatch);
+			}
+			gpu.insertProcessed(dataBatch);
+//		}
 	}
 
 	/**

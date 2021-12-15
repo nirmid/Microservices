@@ -36,14 +36,7 @@ public class CPUService extends MicroService {
         cpu.updateTime();
         });
         Thread process = new Thread (()->
-        {
-            try {
-                cpu.processData();
-            } catch (InterruptedException e) {}
-        });
-        try {
-            process.join();
-        }catch (InterruptedException e){}
+                cpu.processData());
     }
 
 

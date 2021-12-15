@@ -48,22 +48,29 @@ public class GPUService extends MicroService {
                         } catch (InterruptedException e) {
                         }
                     });
-                    set.join();
                 });
         subscribeEvent(TestModelEvent.class,(t)->{
             double rnd = Math.random();
             switch (t.getType()){
                 case Msc:
-                    if(rnd < 0.8)
-                        complete(t,Model.results.Good);
-                    else
-                        complete(t,Model.results.Bad);
+                    if(rnd < 0.8) {
+                        complete(t, Model.results.Good);
+                        t.getModel().setResult(Model.results.Good);
+                    }
+                    else {
+                        complete(t, Model.results.Bad);
+                        t.getModel().setResult(Model.results.Bad);
+                    }
                     break;
                 case PhD:
-                    if(rnd < 0.6)
-                        complete(t,Model.results.Good);
-                    else
-                        complete(t,Model.results.Bad);
+                    if(rnd < 0.6) {
+                        complete(t, Model.results.Good);
+                        t.getModel().setResult(Model.results.Good);
+                    }
+                    else {
+                        complete(t, Model.results.Bad);
+                        t.getModel().setResult(Model.results.Bad);
+                    }
                 default:
                     throw new IllegalStateException("Unexpected value: " +t.getType());
 
