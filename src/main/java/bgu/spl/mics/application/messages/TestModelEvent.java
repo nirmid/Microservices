@@ -4,7 +4,7 @@ import bgu.spl.mics.Event;
 import bgu.spl.mics.application.objects.Model;
 import bgu.spl.mics.application.objects.Student;
 
-public class TestModelEvent implements Event <String> {
+public class TestModelEvent implements Event <Model.results> {
     private Student.Degree type;
     private Model model;
 
