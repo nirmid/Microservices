@@ -40,7 +40,9 @@ public class StudentService extends MicroService {
             student.setPapersRead(toRead);
         });
         subscribeBroadcast(TickBroadcast.class, (t)-> {
-            notifyAll();
+            synchronized (this) {
+                notifyAll();
+            }
         });
 
         Thread send = new Thread (()-> {
@@ -50,9 +52,11 @@ public class StudentService extends MicroService {
                     curModel = (Model) student.getModels().removeFirst();
                 }
                 Future newFuture = sendEvent(new TrainModelEvent(curModel));
-                while (!terminated && !newFuture.isDone()) {
+                while (!terminated && !newFuture.isDone()) { // nullpointer exception if newfuture is null
                     try {
-                        wait();
+                        synchronized (this) {
+                            wait();
+                        }
                     } catch (InterruptedException e) {
                     }
                 }
@@ -60,7 +64,9 @@ public class StudentService extends MicroService {
                     sendEvent(new TestModelEvent(student.getStatus(), curModel));
                     while (!terminated && curModel.getResult() == Model.results.None) {
                         try {
-                            wait();
+                            synchronized (this) {
+                                wait();
+                            }
                         } catch (InterruptedException e) { }
                     }
                     if (!terminated) {
@@ -70,7 +76,9 @@ public class StudentService extends MicroService {
                     }
                 }
             }
+            System.out.println("Thread Student send is terminated" );
         });
+        send.start();
     }
 
 }

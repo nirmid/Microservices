@@ -1,4 +1,4 @@
-package bgu.spl.mics;
+/*ppackage bgu.spl.mics;
 
 import bgu.spl.mics.application.services.StudentService;
 import bgu.spl.mics.example.messages.ExampleBroadcast;
@@ -98,4 +98,4 @@ public class MessageBusImplTest {
 
     }
 
-}
+}*/

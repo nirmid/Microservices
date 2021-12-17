@@ -12,9 +12,9 @@ public class CPU {
     private Cluster cluster; // should be instance
     private long time;
     private boolean terminated;
-    private long currentTime;//
-    private  long processTime;//
-    private DataBatch currentData;//
+    private long currentTime;
+    private  long processTime;
+    private DataBatch currentData;
 
     public CPU(int _cores){ //constractor
         cores = _cores;
@@ -41,7 +41,9 @@ public class CPU {
             while (time - currentTime < processTime)
                 try{
                     cluster.addCPUTime(1); // STATISTICS
-                    wait();
+                    synchronized (this) {
+                        wait();
+                    }
                 }catch (InterruptedException e){
                     if (terminated)
                         processData();
@@ -49,16 +51,21 @@ public class CPU {
             cluster.addDataBatchProcess(); // STATISTICS
             cluster.receiveToTrain(currentData);
         }
+        System.out.println("Thread CPU ProcessData is terminated" );
     }
 
-//    public void processData2() {
-//        if (time - currentTime >=  processTime) {
-//            cluster.receiveToTrain(currentData);
-//            currentData = cluster.getDataBatch();
-//            currentTime = time;
-//            processTime = processTime(currentData.getType());
-//        }
-//    }
+   public void processData2() {
+       if (currentData != null) {
+           if (time - currentTime >= processTime) {
+               cluster.receiveToTrain(currentData);
+               currentData = cluster.getDataBatch2();
+               cluster.addCPUTime(1);
+           } else
+               cluster.addCPUTime(1);
+       } else {
+           currentData = cluster.getDataBatch2();
+       }
+   }
 
 
 
@@ -68,17 +75,22 @@ public class CPU {
      */
     public void updateTime(){
         time=time +1;
-        notifyAll();
+        synchronized (this) {
+            notifyAll();
+        }
     } //  update time according to TimerService
 
     public void updateTime2(){
         time = time+1;
-        processData();
+        processData2();
 
     }
     public void terminateCpu(){
         terminated = true;
-    notifyAll();}
+        synchronized (this) {
+            notifyAll();
+        }
+    }
     public int getCores(){return cores;} // returns cores
     public long getTime(){return time;} // returns time
 

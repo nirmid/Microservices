@@ -46,7 +46,9 @@ public class Future<T> {
 		if(result == null || this.result != null )
 			throw new IllegalArgumentException("argument is null or this.result is already resolved");
 		this.result = result;
-		this.notifyAll();
+		synchronized (this){
+			notifyAll();
+		}
 	}
 	
 	/**

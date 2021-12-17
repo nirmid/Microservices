@@ -9,6 +9,7 @@ import bgu.spl.mics.application.messages.TerminateBroadcast;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.PriorityQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Passive object representing the cluster.
@@ -27,9 +28,9 @@ public class Cluster {
 	private PriorityQueue<CpuPair> cpuPairs; // no need
 	// statistics
 	private LinkedList<String> namesModelTrained;
-	private int dataBatchProcess;
-	private int CPUTime;
-	private int GPUTime;
+	private AtomicInteger dataBatchProcess; // Nir's implement
+	private AtomicInteger CPUTime; // Nir's implement
+	private AtomicInteger GPUTime; // Nir's implement
 	private Object dataBatchP = new Object();
 	private Object CPUT = new Object();
 	private Object GPUT = new Object();
@@ -43,9 +44,9 @@ public class Cluster {
 		dataBMap = new HashMap<DataBatch,GPU>();
 		toProcess = new LinkedList<DataBatch>();
 		namesModelTrained = new LinkedList<String>();
-		dataBatchProcess = 0;
-		CPUTime = 0;
-		GPUTime = 0;
+		dataBatchProcess = new AtomicInteger(0); // Nir's implement
+		CPUTime = new AtomicInteger(0); // Nir's implement
+		GPUTime = new AtomicInteger(0); // Nir's implement
 	}
 	public void addCPU(CPU cpu){
 		synchronized (CPUS) {
@@ -65,37 +66,67 @@ public class Cluster {
 		}
 	}
 
+	public AtomicInteger getCPUTime() {
+		return CPUTime;
+	}
+
+	public AtomicInteger getGPUTime() {
+		return GPUTime;
+	}
+
+	public AtomicInteger getDataBatchProcess() {
+		return dataBatchProcess;
+	}
+
+	public LinkedList<String> getNamesModelTrained() {
+		return namesModelTrained;
+	}
+
 	public void addDataBatchProcess(){ // STATISTICS
 		synchronized (dataBatchP){
-			dataBatchProcess = dataBatchProcess +1;
+			dataBatchProcess.getAndIncrement();
 		}
 	}
 
 	public void addCPUTime(int time){ // STATISTICS
 		synchronized (CPUT) {
-			CPUTime = CPUTime + time;
+			CPUTime.getAndIncrement();
 		}
 	}
 
 	public void addGPUTime(int time){ // STATISTICS
 		synchronized (GPUT) {
-			GPUTime = GPUTime + time;
+			GPUTime.getAndIncrement();
 		}
 	}
 
 	public DataBatch getDataBatch(){  // function used by a cpu to receive a databatch to process
-		while(toProcess.isEmpty())
-			try{
-				wait();
-			}catch (InterruptedException e){}
+		while(toProcess.isEmpty()) {
+			try {
+				synchronized (this) {
+					wait();
+				}
+			} catch (InterruptedException e) {}
+		}
+		DataBatch dataBatch;
 		synchronized (toProcess){
 				if(toProcess.isEmpty())
 					getDataBatch();
-				return toProcess.removeFirst();
+				dataBatch =  toProcess.removeFirst();
 		}
+		return dataBatch;
 	}
 
-	public DataBatch getDataBatach2(){  // function used by a cpu to receive a databatch to process
+	public DataBatch getDataBatch2(){ // Nir's implement
+		DataBatch dataBatch= null;
+		synchronized (toProcess) { // toProcess should be BlockingQueue, is it thread safe? (removing)
+			if(!toProcess.isEmpty())
+				dataBatch = toProcess.removeFirst();
+		}
+		return dataBatch;
+	}
+
+	/*public DataBatch getDataBatach2(){  // function used by a cpu to receive a databatch to process
 		while(toProcess.isEmpty())
 			try{
 				wait();
@@ -105,7 +136,7 @@ public class Cluster {
 				getDataBatch();
 			return toProcess.removeFirst();
 		}
-	}
+	}*/
 
 	public void receiveToProcess(DataBatch dataBatch,GPU gpu){
 		synchronized (dataBMap){
@@ -114,7 +145,9 @@ public class Cluster {
 		synchronized (toProcess){
 			toProcess.add(dataBatch);
 		}
-		notifyAll();
+		synchronized (this) {
+			notifyAll();
+		}
 
 //		CPU cpu; // no need
 //		synchronized (cpuPairs) {

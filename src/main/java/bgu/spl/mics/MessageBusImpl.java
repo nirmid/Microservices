@@ -6,6 +6,7 @@ import bgu.spl.mics.application.services.GPUService;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * The {@link MessageBusImpl class is the implementation of the MessageBus interface.
@@ -20,7 +21,7 @@ public class MessageBusImpl implements MessageBus {
 	private HashMap<MicroService, LinkedList<Message>> microMap; // holds messages queues for each microservice
 	private HashMap<Event,Future> futureMap; // holds future that is associated with an event
 	private static boolean isDone = false;
-	private HashMap<MicroService, LinkedList<Class<? extends Message>>> registers;
+	private HashMap<MicroService, LinkedList<Class<? extends Message>>> registers;  // list of lists that a microservice is registered to
 
 
 	private MessageBusImpl(){
@@ -28,6 +29,7 @@ public class MessageBusImpl implements MessageBus {
 		broadcastMap = new HashMap<Class<? extends Broadcast>,LinkedList<MicroService>>();
 		microMap = new HashMap<MicroService, LinkedList<Message>>();
 		futureMap = new HashMap<Event,Future>();
+		registers = new HashMap<MicroService, LinkedList<Class<? extends Message>>>();
 	}
 	@Override
 	/**
@@ -48,6 +50,7 @@ public class MessageBusImpl implements MessageBus {
 				}
 			else {
 				LinkedList<Class<? extends Message>> mList = new LinkedList<Class<? extends Message>>();
+				mList.add(type);
 				synchronized (registers) {
 					registers.put(m, mList);
 				}
@@ -66,6 +69,7 @@ public class MessageBusImpl implements MessageBus {
 						}
 					else {
 						LinkedList<Class<? extends Message>> mList = new LinkedList<Class<? extends Message>>();
+						mList.add(type);
 						synchronized (registers) {
 							registers.put(m, mList);
 						}
@@ -76,6 +80,7 @@ public class MessageBusImpl implements MessageBus {
 					list.addLast(m);
 					eventMap.put(type, list);
 					LinkedList<Class<? extends Message>> mList = new LinkedList<Class<? extends Message>>();
+					mList.add(type);
 					synchronized (registers) {
 						registers.put(m, mList);
 					}
@@ -106,6 +111,7 @@ public class MessageBusImpl implements MessageBus {
 				}
 			else {
 				LinkedList<Class<? extends Message>> mList = new LinkedList<Class<? extends Message>>();
+				mList.add(type);
 				synchronized (registers) {
 					registers.put(m, mList);
 				}
@@ -125,6 +131,7 @@ public class MessageBusImpl implements MessageBus {
 						}
 					else {
 						LinkedList<Class<? extends Message>> mList = new LinkedList<Class<? extends Message>>();
+						mList.add(type);
 						synchronized (registers) {
 							registers.put(m, mList);
 						}
@@ -135,6 +142,7 @@ public class MessageBusImpl implements MessageBus {
 					list.addLast(m);
 					broadcastMap.put(type, list);
 					LinkedList<Class<? extends Message>> mList = new LinkedList<Class<? extends Message>>();
+					mList.add(type);
 					synchronized (registers) {
 						registers.put(m, mList);
 					}
@@ -168,11 +176,17 @@ public class MessageBusImpl implements MessageBus {
 	@Override
 	public void sendBroadcast(Broadcast b) {
         LinkedList<MicroService> subscribers = broadcastMap.get(b.getClass());
-        for (MicroService m : subscribers)
-           synchronized (microMap.get(m)){
-			(microMap.get(m)).addFirst(b);
-		   }
-		notifyAll();
+        for (MicroService m : subscribers) {
+			LinkedList<Message> list = microMap.get(m);
+			if (list != null) {
+				synchronized (list) {
+					(list).addFirst(b);
+				}
+			}
+		}
+		synchronized (this) {
+			notifyAll();
+		}
 	}
 
 	/**
@@ -201,7 +215,9 @@ public class MessageBusImpl implements MessageBus {
 		synchronized (microMap.get(m)) {
 			microMap.get(m).addLast(e);
 		}
-		notifyAll();
+		synchronized (this) {
+			notifyAll();
+		}
 		return future;
 	}
 
@@ -228,10 +244,23 @@ public class MessageBusImpl implements MessageBus {
 	@Override
 	public void unregister(MicroService m) {
 		LinkedList<Class<? extends Message>> mList = registers.get(m);
-		for (Class<? extends Message> t : mList)
-
+		System.out.println("microservice unregistered: "+m.getName());
+		for (Class<? extends Message> t : mList) {
+			if(eventMap.get(t) != null)
+				synchronized (eventMap){
+					eventMap.remove(m);
+				}
+			else
+				if(broadcastMap.get(t) != null)
+					synchronized (broadcastMap){
+					broadcastMap.remove(m);
+					}
+		}
 		synchronized (microMap) {
 			microMap.remove(m);
+		}
+		synchronized (registers){
+			registers.remove(m);
 		}
 	}
 
@@ -244,10 +273,25 @@ public class MessageBusImpl implements MessageBus {
      * @pre
      *
 	 */
+
+	public Message awaitMessage2(MicroService m) throws InterruptedException { // old implement
+		while (microMap.get(m).isEmpty() || (m.getClass().isInstance(GPUService.class) && !((GPUService)m).isDone()) ) {
+			synchronized (this){
+				wait();
+			}
+		}
+		synchronized (microMap.get(m)) {
+			return microMap.get(m).removeFirst();
+		}
+	}
 	@Override
-	public Message awaitMessage(MicroService m) throws InterruptedException {
-		while (microMap.get(m).isEmpty() || (m.getClass().isInstance(GPU.class) && !((GPUService)m).isDone()) ) {
-			wait();
+	public Message awaitMessage(MicroService m)  {
+		while (microMap.get(m).isEmpty() || (m.getClass().isInstance(GPUService.class) && !((GPUService)m).getIsDoneGpu()) ) {
+			try {
+				synchronized (this) {
+					wait();
+				}
+			}catch (InterruptedException e){}
 		}
 		synchronized (microMap.get(m)) {
 			return microMap.get(m).removeFirst();

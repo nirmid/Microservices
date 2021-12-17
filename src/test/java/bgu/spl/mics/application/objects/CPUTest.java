@@ -1,4 +1,4 @@
-package bgu.spl.mics.application.objects;
+/*package bgu.spl.mics.application.objects;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -45,4 +45,4 @@ public class CPUTest {
         cpu.updateTime();
         assertEquals(10,cpu.getTime());
     }
-}
+}*/

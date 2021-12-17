@@ -1,11 +1,9 @@
 package bgu.spl.mics.application;
 
+import bgu.spl.mics.MessageBusImpl;
 import bgu.spl.mics.application.objects.*;
 import bgu.spl.mics.application.services.*;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import com.google.gson.*;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -41,9 +39,10 @@ public class CRMSRunner {
                     degree = Student.Degree.PhD;
 
                 // Extract Models
+                JsonArray jsonArrayModels = studentObject.get("models").getAsJsonArray();
                 LinkedList<Model> models = new LinkedList<Model>();
-                for(JsonElement modelElement: jsonArrayStudents){
-                    JsonObject modelObject = studentElement.getAsJsonObject();
+                for(JsonElement modelElement: jsonArrayModels){
+                    JsonObject modelObject = modelElement.getAsJsonObject();
                     String modelName = modelObject.get("name").getAsString();
                     String typeString = modelObject.get("type").getAsString();
                     int size = modelObject.get("size").getAsInt();
@@ -71,8 +70,7 @@ public class CRMSRunner {
             int gpuCounter = 0;
             for(JsonElement gpuElement: jsonArrayGpus){
                 GPU gpu;
-                JsonObject gpuObject = gpuElement.getAsJsonObject();
-                String gpuType = gpuObject.getAsString();
+                String gpuType = gpuElement.getAsString();
                 if(gpuType.compareTo("RTX3090") == 0)
                     gpu = new GPU(GPU.Type.RTX3090);
                 else {
@@ -82,7 +80,7 @@ public class CRMSRunner {
                         gpu = new GPU(GPU.Type.GTX1080);
                 }
                 gpus.add(gpu);
-                GPUServices.add(new GPUService("GPU"+gpuCounter,gpu));
+                GPUServices.add(new GPUService("GPU"+gpuCounter,gpu,1)); // Nir's implement, different constractor
                 gpuCounter = gpuCounter +1;
 
             }
@@ -93,11 +91,10 @@ public class CRMSRunner {
             JsonArray jsonArrayCpus = fileObject.get("CPUS").getAsJsonArray();
             int cpuCounter = 0;
             for(JsonElement cpuElement: jsonArrayCpus) {
-                JsonObject cpuObject = cpuElement.getAsJsonObject();
-                int cores = cpuObject.getAsInt();
+                int cores = cpuElement.getAsInt();
                 CPU cpu = new CPU(cores);
                 cpus.add(cpu);
-                CPUServices.add(new CPUService("CPU"+gpuCounter,cpu));
+                CPUServices.add(new CPUService("CPU"+cpuCounter,cpu));
                 cpuCounter = cpuCounter +1;
             }
 
@@ -120,36 +117,61 @@ public class CRMSRunner {
             TimeService time = new TimeService(duration,tickTime);
             Thread timeService = new Thread(time);
 
+            //Initalize Singeltons
+            MessageBusImpl.getInstace();
+            Cluster.getInstance();
+
+            LinkedList<Thread> threads = new LinkedList<Thread>();
+
             //GPU Threads
             for(GPUService gpuService: GPUServices){
                 Thread gpuThread = new Thread(gpuService);
+                threads.add(gpuThread);
                 gpuThread.start();
             }
 
             //CPU Threads
             for(CPUService cpuService: CPUServices){
                 Thread cpuThread = new Thread(cpuService);
+                threads.add(cpuThread);
                 cpuThread.start();
             }
 
             //Conference Threads
             for(ConferenceService conferenceService: conferenceServices){
                 Thread conferenceThread = new Thread(conferenceService);
+                threads.add(conferenceThread);
                 conferenceThread.start();
             }
 
             //Student Threads
             for(StudentService studentService: studentServices){
                 Thread studentThread = new Thread(studentService);
+                threads.add(studentThread);
                 studentThread.start();
             }
+
+            threads.add(timeService);
 
             //TickService Thread
             timeService.start();
 
+            for (Thread thread : threads) {
+                try {
+                    thread.join();
+                }catch (Exception e){};
+            }
+            Gson gson = new Gson();
+            for(Student student: students){
+
+            }
 
 
         }catch (FileNotFoundException e){}
+
+
+
+
 
     }
 }

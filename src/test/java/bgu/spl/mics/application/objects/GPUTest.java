@@ -1,4 +1,4 @@
-package bgu.spl.mics.application.objects;
+/*ppackage bgu.spl.mics.application.objects;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -46,4 +46,4 @@ public class GPUTest {
 
 
     }
-}
+}*/

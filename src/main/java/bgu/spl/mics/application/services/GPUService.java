@@ -19,23 +19,47 @@ import bgu.spl.mics.application.objects.Model;
 public class GPUService extends MicroService {
     private GPU gpu;
     private boolean isDone;
+    private TrainModelEvent trainModelEvent; // Nir's implement
+
     public GPUService(String name,GPU _gpu) {
         super(name);
         gpu = _gpu;
         isDone = true;
     }
 
+    public GPUService(String name,GPU _gpu,int n) {  // Nir's implement
+        super(name);
+        gpu = _gpu;
+        isDone = true; // no need , using GPU isDone
+        gpu.setGpuService(this);
+        trainModelEvent= null;
+    }
 
+    public boolean getIsDoneGpu(){   // Nir's implement
+        return gpu.isDone();
+     }
+
+     public void gpuComplete(){
+         trainModelEvent.getModel().setStatus(Model.status.Trained);
+        complete(trainModelEvent,trainModelEvent.getModel());
+    }
 
     @Override
     protected void initialize() {
         subscribeBroadcast(TickBroadcast.class,(t)-> {
-            gpu.updateTime();
+            gpu.updateTime2(); // Nir's implement
         });
         subscribeBroadcast(TerminateBroadcast.class,(t) ->{
+            gpu.terminate();
             terminate();
         });
-        subscribeEvent(TrainModelEvent.class,(t)-> {
+        subscribeEvent(TrainModelEvent.class,(t)-> { // Nir's implement
+            this.trainModelEvent =t;
+            gpu.setModel2(t.getModel());
+            t.getModel().setStatus(Model.status.Training);
+                });
+
+        /*subscribeEvent(TrainModelEvent.class,(t)-> {
                     Thread set = new Thread(() ->
                     {
                         t.getModel().setStatus(Model.status.Training);
@@ -43,13 +67,16 @@ public class GPUService extends MicroService {
                             isDone = false;
                             gpu.setModel(t.getModel());
                             t.getModel().setStatus(Model.status.Trained);
-                            complete(t, "finished");
+                            complete(t, t.getModel());
                             isDone = true;
                         } catch (InterruptedException e) {
                         }
                     });
                     set.start();
+                    System.out.println("Thread TrainModelEvent is terminated" );
                 });
+         */
+
         subscribeEvent(TestModelEvent.class,(t)->{
             double rnd = Math.random();
             switch (t.getType()){

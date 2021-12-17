@@ -3,6 +3,7 @@ package bgu.spl.mics.application.services;
 import bgu.spl.mics.MicroService;
 import bgu.spl.mics.application.messages.TerminateBroadcast;
 import bgu.spl.mics.application.messages.TickBroadcast;
+import bgu.spl.mics.application.objects.Cluster;
 
 import java.util.Timer;
 import java.util.TimerTask;
@@ -43,6 +44,11 @@ public class TimeService extends MicroService{
 				else {
 					sendBroadcast(new TerminateBroadcast());
 					timer.cancel();
+					Cluster cluster = Cluster.getInstance();
+					System.out.println("CPU time used: "+cluster.getCPUTime());
+					System.out.println("GPU time used: "+cluster.getGPUTime());
+					System.out.println("DataBatches processed: "+cluster.getDataBatchProcess());
+					System.out.println("Trained Models: "+cluster.getNamesModelTrained());
 				}
 			}
 		};
