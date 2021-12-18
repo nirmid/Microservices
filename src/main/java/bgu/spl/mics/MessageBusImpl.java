@@ -15,7 +15,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class MessageBusImpl implements MessageBus {
 
-	private static MessageBusImpl bus = null;
+	private static MessageBusImpl bus = null; // added nothing
 	private ConcurrentHashMap<Class<? extends Event>, LinkedList<MicroService>> eventMap; // holds microservice linkedlist which are subscribed to some event type
 	private ConcurrentHashMap<Class<? extends Broadcast>,LinkedList<MicroService>> broadcastMap; // holds microservice linkedlist which are subscribed to some broadcast type
 	private ConcurrentHashMap<MicroService, LinkedList<Message>> microMap; // holds messages queues for each microservice
