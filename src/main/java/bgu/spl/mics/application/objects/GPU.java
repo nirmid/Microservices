@@ -1,6 +1,8 @@
 package bgu.spl.mics.application.objects;
 
 import bgu.spl.mics.application.services.GPUService;
+
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.LinkedBlockingDeque;
 
 /**
@@ -21,8 +23,8 @@ public class GPU {
     private volatile int curCapacity; // amount of possible databatches to send/receive
     private volatile long time; // current tick
     private int tick; // num of ticks to train  process data
-    private LinkedBlockingDeque<DataBatch> preTrained; // databatch that has been processed by a cpu
-    private LinkedBlockingDeque<DataBatch> preProcessed; // databatch that is needed to be processed by a cpu
+    private ConcurrentLinkedDeque<DataBatch> preTrained; // databatch that has been processed by a cpu
+    private ConcurrentLinkedDeque<DataBatch> preProcessed; // databatch that is needed to be processed by a cpu
     private boolean isDone; // does the gpu finished training current model
     private int curIdx;
     //Nir's implement
@@ -34,8 +36,8 @@ public class GPU {
     public GPU (Type type){
         this.type = type;
         cluster = Cluster.getInstance();
-        preTrained = new LinkedBlockingDeque<DataBatch>();
-        preProcessed = new LinkedBlockingDeque<DataBatch>();
+        preTrained = new ConcurrentLinkedDeque<DataBatch>();
+        preProcessed = new ConcurrentLinkedDeque<DataBatch>();
         time = 1;
         curTime = 1;
         model = null;
