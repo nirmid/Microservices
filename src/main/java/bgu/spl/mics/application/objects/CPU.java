@@ -65,6 +65,7 @@ public class CPU {
     }
 
     public int getCores(){return cores;} // returns cores
+
     public long getTime(){return time;} // returns time
 
     private long processTime(Data.Type type){
@@ -77,7 +78,7 @@ public class CPU {
                 processTime = ((long) (32 / cores)) * 2;
                 break;
             case Tabular:
-                processTime = ((long) (32 / cores));
+                processTime = (long) (32 / cores);
                 break;
             default:
                 throw new IllegalStateException("Unexpected value: " + type);

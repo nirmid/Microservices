@@ -143,7 +143,6 @@ public class CRMSRunner {
 
             //Student Threads
             for(StudentService studentService: studentServices){
-                System.out.println("thread started: "+studentService.getName());
                 Thread studentThread = new Thread(studentService);
                 threads.add(studentThread);
                 studentThread.start();
@@ -222,6 +221,7 @@ public class CRMSRunner {
                 pw.println("            \"date\": " + conference.getDate()  + ",");
                 pw.print("            \"publications\":" + " [");
                 Boolean firsty = true;
+                int counter = 0;
                 for (Model model : conference.getModels()){
                     if (firsty)
                         pw.println();
@@ -234,14 +234,18 @@ public class CRMSRunner {
                     pw.println("                    },");
                     pw.println("                    \"status\": \"" + model.getStatus() + "\""  + ",");
                     pw.println("                    \"results\": \"" + model.getResult() + "\"");
-                    pw.println("                }");
+                    if(counter <  conference.getModels().size()-1)
+                        pw.println("                },");
+                    else
+                        pw.println("                }");
+                    counter = counter +1;
                 }
                 if (firsty)
                     pw.println("]");
                 else
                     pw.println("            ]");
                 if (last<conferences.size())
-                    pw.println("        }, ");
+                    pw.println("        },");
                 else
                     pw.println("        }");
             }

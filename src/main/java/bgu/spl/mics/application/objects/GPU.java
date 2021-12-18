@@ -19,7 +19,7 @@ public class GPU {
     private Model model; // current model gpu is working on
     private int capacity; // amount of batches could be stored at the same time
     private volatile int curCapacity; // amount of possible databatches to send/receive
-    private long time; // current tick
+    private volatile long time; // current tick
     private int tick; // num of ticks to train  process data
     private LinkedBlockingDeque<DataBatch> preTrained; // databatch that has been processed by a cpu
     private LinkedBlockingDeque<DataBatch> preProcessed; // databatch that is needed to be processed by a cpu

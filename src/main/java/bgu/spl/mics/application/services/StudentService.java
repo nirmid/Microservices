@@ -36,7 +36,6 @@ public class StudentService extends MicroService {
             synchronized (this) {
                 notifyAll();
             }
-            System.out.println(student);
         });
         subscribeBroadcast(PublishConferenceBroadcast.class,(t) -> {
             int toRead = t.getConference().getNumOfPublications();
@@ -55,7 +54,6 @@ public class StudentService extends MicroService {
                     curModel = (Model) student.getModels().removeFirst();
                 }
                 Future newFuture = sendEvent(new TrainModelEvent(curModel));
-                System.out.println("Student sent a TrainModelEvent: "+student.getName() );
                 while (!terminated && !newFuture.isDone()) {
                     try {
                         synchronized (this) {
@@ -80,7 +78,6 @@ public class StudentService extends MicroService {
                     }
                 }
             }
-            System.out.println("Thread Student send is terminated: "+student.getName() );
         });
         send.start();
     }

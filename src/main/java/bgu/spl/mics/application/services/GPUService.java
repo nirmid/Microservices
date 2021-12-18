@@ -95,7 +95,6 @@ public class GPUService extends MicroService {
                     break;
 
             }
-            System.out.println("Models is tested: " + t.getModel().getName());
             t.getModel().setStatus(Model.status.Tested);
         });
     }

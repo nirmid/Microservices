@@ -44,6 +44,7 @@ public class Model {
     }
 
     public void setResult(results result){this.result = result;}
+
     public results getResult(){
         return result;
     }
