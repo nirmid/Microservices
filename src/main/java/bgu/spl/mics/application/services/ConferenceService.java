@@ -43,6 +43,7 @@ public class ConferenceService extends MicroService {
         time = time + 1;
         if (time == date) {
             sendBroadcast(new PublishConferenceBroadcast(conference));
+            System.out.println(conference);
             terminate();
         }
     }

@@ -16,20 +16,20 @@ import java.util.concurrent.ConcurrentHashMap;
 public class MessageBusImpl implements MessageBus {
 
 	private static MessageBusImpl bus = null;
-	private HashMap<Class<? extends Event>, LinkedList<MicroService>> eventMap; // holds microservice linkedlist which are subscribed to some event type
-	private HashMap<Class<? extends Broadcast>,LinkedList<MicroService>> broadcastMap; // holds microservice linkedlist which are subscribed to some broadcast type
-	private HashMap<MicroService, LinkedList<Message>> microMap; // holds messages queues for each microservice
-	private HashMap<Event,Future> futureMap; // holds future that is associated with an event
+	private ConcurrentHashMap<Class<? extends Event>, LinkedList<MicroService>> eventMap; // holds microservice linkedlist which are subscribed to some event type
+	private ConcurrentHashMap<Class<? extends Broadcast>,LinkedList<MicroService>> broadcastMap; // holds microservice linkedlist which are subscribed to some broadcast type
+	private ConcurrentHashMap<MicroService, LinkedList<Message>> microMap; // holds messages queues for each microservice
+	private ConcurrentHashMap<Event,Future> futureMap; // holds future that is associated with an event
 	private static boolean isDone = false;
-	private HashMap<MicroService, LinkedList<Class<? extends Message>>> registers;  // list of lists that a microservice is registered to
+	private ConcurrentHashMap<MicroService, LinkedList<Class<? extends Message>>> registers;  // list of lists that a microservice is registered to
 
 
 	private MessageBusImpl(){
-		eventMap = new HashMap<Class<? extends Event>, LinkedList<MicroService>>();
-		broadcastMap = new HashMap<Class<? extends Broadcast>,LinkedList<MicroService>>();
-		microMap = new HashMap<MicroService, LinkedList<Message>>();
-		futureMap = new HashMap<Event,Future>();
-		registers = new HashMap<MicroService, LinkedList<Class<? extends Message>>>();
+		eventMap = new ConcurrentHashMap<Class<? extends Event>, LinkedList<MicroService>>();
+		broadcastMap = new ConcurrentHashMap<Class<? extends Broadcast>,LinkedList<MicroService>>();
+		microMap = new ConcurrentHashMap<MicroService, LinkedList<Message>>();
+		futureMap = new ConcurrentHashMap<Event,Future>();
+		registers = new ConcurrentHashMap<MicroService, LinkedList<Class<? extends Message>>>();
 	}
 	@Override
 	/**
@@ -180,7 +180,7 @@ public class MessageBusImpl implements MessageBus {
 			LinkedList<Message> list = microMap.get(m);
 			if (list != null) {
 				synchronized (list) {
-					(list).addFirst(b);
+					(list).addLast(b); // Nir's implement
 				}
 			}
 		}
@@ -285,8 +285,8 @@ public class MessageBusImpl implements MessageBus {
 		}
 	}
 	@Override
-	public Message awaitMessage(MicroService m)  {
-		while (microMap.get(m).isEmpty() || (m.getClass().isInstance(GPUService.class) && !((GPUService)m).getIsDoneGpu()) ) {
+	public Message awaitMessage(MicroService m)  { //Nir's implement
+		while (microMap.get(m).isEmpty()) {
 			try {
 				synchronized (this) {
 					wait();

@@ -57,11 +57,18 @@ public class CPU {
    public void processData2() {
        if (currentData != null) {
            if (time - currentTime >= processTime) {
+               cluster.addDataBatchProcess(); // STATISTICS
                cluster.receiveToTrain(currentData);
+               cluster.addCPUTime(1);
                currentData = cluster.getDataBatch2();
+               if(currentData != null) {
+                   currentTime = time;
+                   processTime = processTime(currentData.getType());
+               }
+           }
+           else {
                cluster.addCPUTime(1);
-           } else
-               cluster.addCPUTime(1);
+           }
        } else {
            currentData = cluster.getDataBatch2();
        }

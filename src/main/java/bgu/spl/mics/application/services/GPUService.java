@@ -8,6 +8,10 @@ import bgu.spl.mics.application.messages.TrainModelEvent;
 import bgu.spl.mics.application.objects.GPU;
 import bgu.spl.mics.application.objects.Model;
 
+import java.util.concurrent.ConcurrentLinkedDeque;
+
+import static bgu.spl.mics.application.objects.Student.Degree.PhD;
+
 /**
  * GPU service is responsible for handling the
  * {@link TrainModelEvent} and {@link TestModelEvent},
@@ -20,6 +24,7 @@ public class GPUService extends MicroService {
     private GPU gpu;
     private boolean isDone;
     private TrainModelEvent trainModelEvent; // Nir's implement
+    private ConcurrentLinkedDeque<TrainModelEvent> trainModelEvents;
 
     public GPUService(String name,GPU _gpu) {
         super(name);
@@ -33,6 +38,7 @@ public class GPUService extends MicroService {
         isDone = true; // no need , using GPU isDone
         gpu.setGpuService(this);
         trainModelEvent= null;
+        trainModelEvents = new ConcurrentLinkedDeque<TrainModelEvent>();
     }
 
     public boolean getIsDoneGpu(){   // Nir's implement
@@ -41,12 +47,17 @@ public class GPUService extends MicroService {
 
      public void gpuComplete(){
          trainModelEvent.getModel().setStatus(Model.status.Trained);
-        complete(trainModelEvent,trainModelEvent.getModel());
+         complete(trainModelEvent,trainModelEvent.getModel());
     }
 
     @Override
     protected void initialize() {
         subscribeBroadcast(TickBroadcast.class,(t)-> {
+            if(gpu.isDone() && !trainModelEvents.isEmpty()) {
+                trainModelEvent = trainModelEvents.removeFirst();
+                gpu.setModel2(trainModelEvent.getModel());
+                trainModelEvent.getModel().setStatus(Model.status.Training);
+            }
             gpu.updateTime2(); // Nir's implement
         });
         subscribeBroadcast(TerminateBroadcast.class,(t) ->{
@@ -54,9 +65,12 @@ public class GPUService extends MicroService {
             terminate();
         });
         subscribeEvent(TrainModelEvent.class,(t)-> { // Nir's implement
-            this.trainModelEvent =t;
-            gpu.setModel2(t.getModel());
-            t.getModel().setStatus(Model.status.Training);
+            trainModelEvents.add(t);
+            if(gpu.isDone()) {
+                this.trainModelEvent = trainModelEvents.removeFirst();
+                gpu.setModel2(t.getModel());
+                t.getModel().setStatus(Model.status.Training);
+            }
                 });
 
         /*subscribeEvent(TrainModelEvent.class,(t)-> {
@@ -99,10 +113,20 @@ public class GPUService extends MicroService {
                         complete(t, Model.results.Bad);
                         t.getModel().setResult(Model.results.Bad);
                     }
+                    break;
                 default:
-                    throw new IllegalStateException("Unexpected value: " +t.getType());
+                    if(rnd < 0.6) {
+                        complete(t, Model.results.Good);
+                        t.getModel().setResult(Model.results.Good);
+                    }
+                    else {
+                        complete(t, Model.results.Bad);
+                        t.getModel().setResult(Model.results.Bad);
+                    }
+                    break;
 
             }
+            System.out.println("Models is tested: " + t.getModel().getName());
             t.getModel().setStatus(Model.status.Tested);
         });
     }

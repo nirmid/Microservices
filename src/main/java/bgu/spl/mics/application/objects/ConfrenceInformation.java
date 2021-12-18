@@ -40,7 +40,7 @@ public class ConfrenceInformation {
     }
 
     public String toString(){
-
-        return null;
+        String output = "conference information: "+name+" , "+date+" , "+models.toString()+" , "+numOfPublications;
+        return output;
     }
 }

@@ -146,6 +146,7 @@ public class CRMSRunner {
 
             //Student Threads
             for(StudentService studentService: studentServices){
+                System.out.println("thread started: "+studentService.getName());
                 Thread studentThread = new Thread(studentService);
                 threads.add(studentThread);
                 studentThread.start();

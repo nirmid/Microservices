@@ -48,7 +48,8 @@ public class Model {
     public void setStatus(status status){this.status_ = status;}
 
     public String toString(){
-        return null;
+        String output = status_+" , "+result+" , "+name;
+        return output;
     }
 
 

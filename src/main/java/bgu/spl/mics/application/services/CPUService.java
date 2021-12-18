@@ -33,7 +33,7 @@ public class CPUService extends MicroService {
             terminate();
         });
         subscribeBroadcast(TickBroadcast.class, (t)-> {
-        cpu.updateTime2(); // for Nir's implement
+            cpu.updateTime2(); // for Nir's implement
         });
         /*Thread process = new Thread (()->  // for Nir's implement , no need for this thread
                 cpu.processData());

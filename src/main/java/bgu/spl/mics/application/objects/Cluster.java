@@ -9,6 +9,7 @@ import bgu.spl.mics.application.messages.TerminateBroadcast;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.PriorityQueue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -19,7 +20,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Add fields and methods to this class as you see fit (including public methods and constructors).
  */
 public class Cluster {
-	private HashMap<DataBatch,GPU> dataBMap;
+	private ConcurrentHashMap<DataBatch,GPU> dataBMap;
 	private static boolean isDone = false;
 	private static Cluster cluster = null;
 	private LinkedList<CPU> CPUS; // collection of CPUS
@@ -41,7 +42,7 @@ public class Cluster {
 		CPUS = new LinkedList<CPU>();
 		GPUS = new LinkedList<GPU>();
 		cpuPairs = new PriorityQueue<CpuPair>(); // no need
-		dataBMap = new HashMap<DataBatch,GPU>();
+		dataBMap = new ConcurrentHashMap<DataBatch,GPU>();
 		toProcess = new LinkedList<DataBatch>();
 		namesModelTrained = new LinkedList<String>();
 		dataBatchProcess = new AtomicInteger(0); // Nir's implement
@@ -126,18 +127,6 @@ public class Cluster {
 		return dataBatch;
 	}
 
-	/*public DataBatch getDataBatach2(){  // function used by a cpu to receive a databatch to process
-		while(toProcess.isEmpty())
-			try{
-				wait();
-			}catch (InterruptedException e){}
-		synchronized (toProcess){
-			if(toProcess.isEmpty())
-				getDataBatch();
-			return toProcess.removeFirst();
-		}
-	}*/
-
 	public void receiveToProcess(DataBatch dataBatch,GPU gpu){
 		synchronized (dataBMap){
 			dataBMap.put(dataBatch,gpu);
@@ -165,13 +154,13 @@ public class Cluster {
 	 * @param dataBatch
 	 */
 	public void receiveToTrain(DataBatch dataBatch){
-//		if ( dataBatch != null) {
+		if ( dataBatch != null) {
 			GPU gpu = dataBMap.get(dataBatch);
 			synchronized (dataBMap) {
 				dataBMap.remove(dataBatch);
 			}
 			gpu.insertProcessed(dataBatch);
-//		}
+		}
 	}
 
 	/**

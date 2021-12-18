@@ -61,7 +61,7 @@ public class GPU {
                 throw new IllegalStateException("Unexpected value: " +type);
         }
         curCapacity = capacity;
-        isDone = false;
+        isDone = true; // Nir's implement
         cluster.addGPU(this);
         terminated = false;
         //Nir's implement
@@ -119,8 +119,10 @@ public class GPU {
 
     public void updateTime2(){  // Nir's implement
         time = time + 1;
-        sendToCluster2();
-        train2();
+        if(!isDone) {
+            sendToCluster2();
+            train2();
+        }
     }
 
     private void splitData(){
@@ -143,7 +145,6 @@ public class GPU {
                 curIdx = curIdx + 1000;
             }
         }
-        System.out.println("splitdata process finished");
     }
 
     /**
@@ -174,13 +175,12 @@ public class GPU {
     }
 
     private void sendToClusterFirst(){  // Nir's implement
-        for(int i=0; i <= capacity/3 && !preProcessed.isEmpty(); i=i+1) {  // will send to cluster when the model first set
+        for(int i=0; i <= capacity/2 && !preProcessed.isEmpty(); i=i+1) {  // will send to cluster when the model first set
             curCapacity = curCapacity - 1;
             synchronized (preProcessed) {
                 cluster.receiveToProcess(preProcessed.removeFirst(), this);
             }
         }
-        System.out.println("first send to cluster finished");
     }
 
     private void sendToCluster2() {  // Nir's implement
@@ -257,37 +257,37 @@ public class GPU {
     }
 
     private void train2() {  // Nir's implement
-        if (curTraining == null) {
-            if (!preTrained.isEmpty()) {
-                synchronized (preTrained) {
-                    curTraining = preTrained.removeFirst();
-                }
-                curTime = time;
-            }
-        } else
-            if (time - curTime >= tick) {
-            model.getData().updateProcess(1000);
-            cluster.addGPUTime(1); // STATISTICS
-            curCapacity = curCapacity + 1;
-            if (model.getData().getSize() <= model.getData().getProcessed()) {
-                isDone = true;
-                gpuService.gpuComplete();
-                cluster.addModelTrained(model.getName()); //STATISTICS
-            }
-            else{
+            if (curTraining == null) {
                 if (!preTrained.isEmpty()) {
                     synchronized (preTrained) {
                         curTraining = preTrained.removeFirst();
                     }
                     curTime = time;
                 }
-                else
-                    curTraining = null;
+            } else
+                if (time - curTime >= tick) {
+                    model.getData().updateProcess(1000);
+                    cluster.addGPUTime(1); // STATISTICS
+                    curCapacity = curCapacity + 1;
+                    if (model.getData().getSize() <= model.getData().getProcessed()) {
+                        isDone = true;
+                        gpuService.gpuComplete();
+                        cluster.addModelTrained(model.getName()); //STATISTICS
+                    }
+                else {
+                    if (!preTrained.isEmpty()) {
+                        synchronized (preTrained) {
+                            curTraining = preTrained.removeFirst();
+                        }
+                        curTime = time;
+                    } else
+                        curTraining = null;
+                }
             }
+                else {
+                    cluster.addGPUTime(1); // STATISTICS
+                }
         }
-            else
-                cluster.addGPUTime(1); // STATISTICS
-    }
 
     public void terminate(){
         terminated = true;
