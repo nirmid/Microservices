@@ -28,7 +28,12 @@ public class ConfrenceInformation {
     }
 
     public int getDate() {
+
         return date;
+    }
+
+    public String getName() {
+        return name;
     }
 
     public LinkedList<Model> getModels() {

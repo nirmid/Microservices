@@ -56,7 +56,7 @@ public class StudentService extends MicroService {
                 }
                 Future newFuture = sendEvent(new TrainModelEvent(curModel));
                 System.out.println("Student sent a TrainModelEvent: "+student.getName() );
-                while (!terminated && !newFuture.isDone()) { // nullpointer exception if newfuture is null
+                while (!terminated && !newFuture.isDone()) {
                     try {
                         synchronized (this) {
                             wait();

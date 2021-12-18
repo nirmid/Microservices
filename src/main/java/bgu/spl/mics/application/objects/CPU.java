@@ -27,12 +27,12 @@ public class CPU {
     }
 
     /**
-     * process the data form linkedList and send the processed data to cluster
-     * @pre data != null && data.getFirst() != null
-     * @post @pre(data.getFirst()) != data.getFirst()
+     * process the data form cluster and send the processed data to cluster
+     * @pre cluster isn't null
+     * @post if cluster is null, try get databatch from cluster. else,if databatch is processed, send back to cluster and try get another databatch
       */
 
-   public void processData() {
+   private void processData() {
        if (currentData != null) {
            if (time - currentTime >= processTime) {
                cluster.addDataBatchProcess(); // STATISTICS
@@ -67,7 +67,7 @@ public class CPU {
     public int getCores(){return cores;} // returns cores
     public long getTime(){return time;} // returns time
 
-    public long processTime(Data.Type type){
+    private long processTime(Data.Type type){
         long processTime;
         switch (type) {
             case Images:

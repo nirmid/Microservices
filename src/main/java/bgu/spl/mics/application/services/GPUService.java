@@ -49,7 +49,6 @@ public class GPUService extends MicroService {
             gpu.updateTime();
         });
         subscribeBroadcast(TerminateBroadcast.class,(t) ->{
-            gpu.terminate();
             terminate();
         });
         subscribeEvent(TrainModelEvent.class,(t)-> {

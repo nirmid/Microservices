@@ -24,9 +24,7 @@ public class GPU {
     private LinkedBlockingDeque<DataBatch> preTrained; // databatch that has been processed by a cpu
     private LinkedBlockingDeque<DataBatch> preProcessed; // databatch that is needed to be processed by a cpu
     private boolean isDone; // does the gpu finished training current model
-    private Object lock1 = new Object();
     private int curIdx;
-    private boolean terminated;
     //Nir's implement
     private long curTime;
     private DataBatch curTraining;
@@ -60,25 +58,20 @@ public class GPU {
         curCapacity = capacity;
         isDone = true; // Nir's implement
         cluster.addGPU(this);
-        terminated = false;
         //Nir's implement
         curIdx = 0 ;
         curTraining = null;
         gpuService = null;
     }
     /**
-     * @pre preTrained.isEmpty()
-     * @post this.model = model && batchIdx == 0
+     * @pre @param model isn't null
+     * @post this.model = model
      *
-     *
-     * @param model
      */
 
-    public void setGpuService(GPUService gpuService_){
-        this.gpuService = gpuService_;
-    }
-
     public void setModel(Model model){
+        if(model == null )
+            throw new IllegalArgumentException("model argument is null");
         this.model = model;
         curCapacity = capacity;
         isDone = false;
@@ -87,8 +80,17 @@ public class GPU {
         sendToClusterFirst();
     }
 
+    public void setGpuService(GPUService gpuService_){
+        this.gpuService = gpuService_;
+    }
 
+    public long getTime() {
+        return time;
+    }
 
+    /**
+     * @post time is increased by 1
+     */
     public void updateTime(){
         time = time + 1;
         if(!isDone) {
@@ -186,12 +188,6 @@ public class GPU {
                 }
         }
 
-    public void terminate(){
-        terminated = true;
-        synchronized (this) {
-            notifyAll();
-        }
-    }
     public boolean isDone(){ return isDone;}
     public int getCapacity(){return capacity;}
     public int getPreTrainedSize(){return preTrained.size();}

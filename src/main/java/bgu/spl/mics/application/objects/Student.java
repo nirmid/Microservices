@@ -46,9 +46,25 @@ public class Student {
         }
     }
 
+    public LinkedList<Model> getTrainedModels() {
+        return trainedModels;
+    }
+
     public LinkedList<Model> getModels (){return  models; }
     public void setPapersRead(int add){papersRead = papersRead + add; }
     public Degree getStatus(){return status;}
+
+    public String getDepartment() {
+        return department;
+    }
+
+    public int getPublications() {
+        return publications;
+    }
+
+    public int getPapersRead() {
+        return papersRead;
+    }
 
     public String getName() {
         return name;
