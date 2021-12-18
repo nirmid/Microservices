@@ -274,16 +274,6 @@ public class MessageBusImpl implements MessageBus {
      *
 	 */
 
-	public Message awaitMessage2(MicroService m) throws InterruptedException { // old implement
-		while (microMap.get(m).isEmpty() || (m.getClass().isInstance(GPUService.class) && !((GPUService)m).isDone()) ) {
-			synchronized (this){
-				wait();
-			}
-		}
-		synchronized (microMap.get(m)) {
-			return microMap.get(m).removeFirst();
-		}
-	}
 	@Override
 	public Message awaitMessage(MicroService m)  { //Nir's implement
 		while (microMap.get(m).isEmpty()) {

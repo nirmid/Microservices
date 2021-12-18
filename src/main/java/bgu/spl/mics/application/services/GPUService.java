@@ -10,7 +10,6 @@ import bgu.spl.mics.application.objects.Model;
 
 import java.util.concurrent.ConcurrentLinkedDeque;
 
-import static bgu.spl.mics.application.objects.Student.Degree.PhD;
 
 /**
  * GPU service is responsible for handling the
@@ -22,28 +21,17 @@ import static bgu.spl.mics.application.objects.Student.Degree.PhD;
  */
 public class GPUService extends MicroService {
     private GPU gpu;
-    private boolean isDone;
-    private TrainModelEvent trainModelEvent; // Nir's implement
+    private TrainModelEvent trainModelEvent;
     private ConcurrentLinkedDeque<TrainModelEvent> trainModelEvents;
+
 
     public GPUService(String name,GPU _gpu) {
         super(name);
         gpu = _gpu;
-        isDone = true;
-    }
-
-    public GPUService(String name,GPU _gpu,int n) {  // Nir's implement
-        super(name);
-        gpu = _gpu;
-        isDone = true; // no need , using GPU isDone
         gpu.setGpuService(this);
         trainModelEvent= null;
         trainModelEvents = new ConcurrentLinkedDeque<TrainModelEvent>();
     }
-
-    public boolean getIsDoneGpu(){   // Nir's implement
-        return gpu.isDone();
-     }
 
      public void gpuComplete(){
          trainModelEvent.getModel().setStatus(Model.status.Trained);
@@ -55,41 +43,23 @@ public class GPUService extends MicroService {
         subscribeBroadcast(TickBroadcast.class,(t)-> {
             if(gpu.isDone() && !trainModelEvents.isEmpty()) {
                 trainModelEvent = trainModelEvents.removeFirst();
-                gpu.setModel2(trainModelEvent.getModel());
+                gpu.setModel(trainModelEvent.getModel());
                 trainModelEvent.getModel().setStatus(Model.status.Training);
             }
-            gpu.updateTime2(); // Nir's implement
+            gpu.updateTime();
         });
         subscribeBroadcast(TerminateBroadcast.class,(t) ->{
             gpu.terminate();
             terminate();
         });
-        subscribeEvent(TrainModelEvent.class,(t)-> { // Nir's implement
+        subscribeEvent(TrainModelEvent.class,(t)-> {
             trainModelEvents.add(t);
             if(gpu.isDone()) {
                 this.trainModelEvent = trainModelEvents.removeFirst();
-                gpu.setModel2(t.getModel());
+                gpu.setModel(t.getModel());
                 t.getModel().setStatus(Model.status.Training);
             }
                 });
-
-        /*subscribeEvent(TrainModelEvent.class,(t)-> {
-                    Thread set = new Thread(() ->
-                    {
-                        t.getModel().setStatus(Model.status.Training);
-                        try {
-                            isDone = false;
-                            gpu.setModel(t.getModel());
-                            t.getModel().setStatus(Model.status.Trained);
-                            complete(t, t.getModel());
-                            isDone = true;
-                        } catch (InterruptedException e) {
-                        }
-                    });
-                    set.start();
-                    System.out.println("Thread TrainModelEvent is terminated" );
-                });
-         */
 
         subscribeEvent(TestModelEvent.class,(t)->{
             double rnd = Math.random();
@@ -131,7 +101,4 @@ public class GPUService extends MicroService {
         });
     }
 
-    public boolean isDone() {
-        return isDone;
-    }
 }

@@ -1,14 +1,6 @@
 package bgu.spl.mics.application.objects;
 
-
-import bgu.spl.mics.Event;
-import bgu.spl.mics.MessageBusImpl;
-import bgu.spl.mics.MicroService;
-import bgu.spl.mics.application.messages.TerminateBroadcast;
-
-import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.PriorityQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -26,7 +18,6 @@ public class Cluster {
 	private LinkedList<CPU> CPUS; // collection of CPUS
 	private LinkedList<GPU> GPUS; // collection of GPUS
 	private LinkedList<DataBatch> toProcess;
-	private PriorityQueue<CpuPair> cpuPairs; // no need
 	// statistics
 	private LinkedList<String> namesModelTrained;
 	private AtomicInteger dataBatchProcess; // Nir's implement
@@ -41,7 +32,6 @@ public class Cluster {
 	private Cluster(){
 		CPUS = new LinkedList<CPU>();
 		GPUS = new LinkedList<GPU>();
-		cpuPairs = new PriorityQueue<CpuPair>(); // no need
 		dataBMap = new ConcurrentHashMap<DataBatch,GPU>();
 		toProcess = new LinkedList<DataBatch>();
 		namesModelTrained = new LinkedList<String>();
@@ -101,24 +91,7 @@ public class Cluster {
 		}
 	}
 
-	public DataBatch getDataBatch(){  // function used by a cpu to receive a databatch to process
-		while(toProcess.isEmpty()) {
-			try {
-				synchronized (this) {
-					wait();
-				}
-			} catch (InterruptedException e) {}
-		}
-		DataBatch dataBatch;
-		synchronized (toProcess){
-				if(toProcess.isEmpty())
-					getDataBatch();
-				dataBatch =  toProcess.removeFirst();
-		}
-		return dataBatch;
-	}
-
-	public DataBatch getDataBatch2(){ // Nir's implement
+	public DataBatch getDataBatch(){ // Nir's implement
 		DataBatch dataBatch= null;
 		synchronized (toProcess) { // toProcess should be BlockingQueue, is it thread safe? (removing)
 			if(!toProcess.isEmpty())
@@ -137,15 +110,6 @@ public class Cluster {
 		synchronized (this) {
 			notifyAll();
 		}
-
-//		CPU cpu; // no need
-//		synchronized (cpuPairs) {
-//			CpuPair cpuPair = cpuPairs.poll();
-//			cpu = cpuPair.getCpu();
-//			cpuPair.setTicks(cpuPair.getTicks() + cpu.processTime(dataBatch.getType()));
-//			cpuPairs.add(cpuPair);
-//		}
-//		cpu.recieveDataBatch(dataBatch);
 	}
 
 

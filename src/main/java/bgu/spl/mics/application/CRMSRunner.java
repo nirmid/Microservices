@@ -80,7 +80,7 @@ public class CRMSRunner {
                         gpu = new GPU(GPU.Type.GTX1080);
                 }
                 gpus.add(gpu);
-                GPUServices.add(new GPUService("GPU"+gpuCounter,gpu,1)); // Nir's implement, different constractor
+                GPUServices.add(new GPUService("GPU"+gpuCounter,gpu)); // Nir's implement, different constractor
                 gpuCounter = gpuCounter +1;
 
             }
