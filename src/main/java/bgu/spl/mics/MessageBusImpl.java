@@ -142,6 +142,20 @@ public class MessageBusImpl implements MessageBus {
 		microMap.put(m, list);
 	}
 
+	public boolean isRegistered(MicroService m ){
+		if(microMap.get(m) == null)
+			return false;
+		return true;
+	}
+
+	public boolean isEventRegisterered(MicroService m, Event e ){
+		return eventMap.get(e.getClass()).contains(m);
+	}
+
+	public boolean isBroadcastRegisterered(MicroService m, Broadcast e ){
+		return broadcastMap.get(e.getClass()).contains(m);
+	}
+
 	/**
 	 * @pre a MicroService m is registered
 	 * @post a MicroService m is not registered
@@ -150,11 +164,13 @@ public class MessageBusImpl implements MessageBus {
 	@Override
 	public void unregister(MicroService m) {
 		ConcurrentLinkedQueue<Class<? extends Message>> mList = registers.get(m);
-		for (Class<? extends Message> t : mList) {
-			if(eventMap.get(t) != null)
-				eventMap.get(t).remove(m);
-			else if(broadcastMap.get(t) != null)
-				broadcastMap.get(t).remove(m);
+		if(mList != null) {
+			for (Class<? extends Message> t : mList) {
+				if (eventMap.get(t) != null)
+					eventMap.get(t).remove(m);
+				else if (broadcastMap.get(t) != null)
+					broadcastMap.get(t).remove(m);
+			}
 		}
 		microMap.remove(m);
 		registers.remove(m);

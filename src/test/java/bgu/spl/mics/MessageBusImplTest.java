@@ -10,7 +10,7 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 public class MessageBusImplTest {
-    private static MessageBus bus;
+    private static MessageBusImpl bus;
     private static MicroService m;
     private static ExampleBroadcast broadcast;
     private static ExampleEvent event;
@@ -25,19 +25,20 @@ public class MessageBusImplTest {
 
     @Test
     public void subscribeEvent() {
-
-        assertThrows("should not be able to subscribe before registeration",Exception.class,() -> bus.subscribeEvent(event.getClass(),m));
         bus.register(m);
+        assertFalse(bus.isEventRegisterered(m,event));
         bus.subscribeEvent(event.getClass(),m);
+        assertTrue(bus.isEventRegisterered(m,event));
         bus.unregister(m);  // in order to not interfere with other tests
 
     }
 
     @Test
     public void subscribeBroadcast() {
-        assertThrows("should not be able to subscribe before registeration",Exception.class,() -> bus.subscribeBroadcast(broadcast.getClass(),m));
         bus.register(m);
+        assertFalse(bus.isBroadcastRegisterered(m,broadcast));
         bus.subscribeBroadcast(broadcast.getClass(),m);
+        assertTrue(bus.isBroadcastRegisterered(m,broadcast));
         bus.unregister(m);  // in order to not interfere with other tests
         }
 
@@ -73,25 +74,24 @@ public class MessageBusImplTest {
 
     @Test
     public void register() {
+        assertFalse(bus.isRegistered(m));
         bus.register(m);
-        assertThrows("expected exception: microservice has already registered",Exception.class,() -> bus.register(m));
+        assertTrue(bus.isRegistered(m));
         bus.unregister(m); // in order to not interfere with other tests
     }
 
     @Test
     public void unregister() {
         bus.register(m);
+        assertTrue(bus.isRegistered(m));
         bus.unregister(m);
-        assertThrows("expected exception: microservice is not registered",Exception.class,() -> bus.unregister(m));
-
+        assertFalse(bus.isRegistered(m));
     }
 
     @Test
     public void awaitMessage() throws InterruptedException {
-        assertThrows("expected exception: microservice m is not registered",Exception.class,() -> bus.awaitMessage(m));
         bus.register(m);
         bus.subscribeEvent(event.getClass(),m);
-        assertThrows("expected exception: message queue is empty",Exception.class,() -> bus.awaitMessage(m));
         bus.sendEvent(event);
         assertEquals("expected message to be equal to message sent",event,bus.awaitMessage(m));
         bus.unregister(m); // in order to not interfere with other tests
