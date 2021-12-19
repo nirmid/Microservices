@@ -45,10 +45,6 @@ public class TimeService extends MicroService{
 					sendBroadcast(new TerminateBroadcast());
 					timer.cancel();
 					Cluster cluster = Cluster.getInstance();
-					System.out.println("CPU time used: "+cluster.getCPUTime());
-					System.out.println("GPU time used: "+cluster.getGPUTime());
-					System.out.println("DataBatches processed: "+cluster.getDataBatchProcess());
-					System.out.println("Trained Models: "+cluster.getNamesModelTrained());
 				}
 			}
 		};

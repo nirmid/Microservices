@@ -5,12 +5,8 @@ import bgu.spl.mics.application.objects.*;
 import bgu.spl.mics.application.services.*;
 import com.google.gson.*;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.util.ArrayList;
+import java.io.*;
 import java.util.LinkedList;
-import java.util.List;
 
 /** This is the Main class of Compute Resources Management System application. You should parse the input file,
  * create the different instances of the objects, and run the system.
@@ -18,7 +14,7 @@ import java.util.List;
  */
 public class CRMSRunner {
     public static void main(String[] args) {
-        File input = new File("C:\\Users\\97254\\IdeaProjects\\spl2.0\\src\\main\\resources\\example_input.json");
+        File input = new File(args[0]);
         try{
             JsonElement fileElement = JsonParser.parseReader(new FileReader(input));
             JsonObject fileObject = fileElement.getAsJsonObject();
@@ -60,6 +56,7 @@ public class CRMSRunner {
                 Student student = new Student(name,department,degree,models);
                 for(Model model: models)
                     model.setStudent(student);
+                students.add(student);
                 studentServices.add(new StudentService(name,student));
             }
 
@@ -80,7 +77,7 @@ public class CRMSRunner {
                         gpu = new GPU(GPU.Type.GTX1080);
                 }
                 gpus.add(gpu);
-                GPUServices.add(new GPUService("GPU"+gpuCounter,gpu,1)); // Nir's implement, different constractor
+                GPUServices.add(new GPUService("GPU"+gpuCounter,gpu)); // Nir's implement, different constractor
                 gpuCounter = gpuCounter +1;
 
             }
@@ -161,16 +158,109 @@ public class CRMSRunner {
                     thread.join();
                 }catch (Exception e){};
             }
-            Gson gson = new Gson();
-            for(Student student: students){
 
+            //Output file
+            File file = new File("out.json");
+            FileWriter fw = new FileWriter("out.json");
+            PrintWriter pw = new PrintWriter(fw);
+            pw.println("{");
+            pw.println("    \"students\": [");
+            int num=0;
+            for (Student student : students) {
+                num++;
+                pw.println("        {");
+                pw.println("            \"name\": \"" + student.getName() + "\""  + ",");
+                pw.println("            \"department\": \"" + student.getDepartment() + "\""  + ",");
+                pw.println("            \"status\": \"" + student.getStatus() + "\""  + ",");
+                pw.println("            \"publications\": " + student.getPublications() + ",");
+                pw.println("            \"papersRead\": " + student.getPapersRead()  + ",");
+                pw.print("            \"trainedModels\": " + "[");
+                boolean hasModel=false;
+                boolean first = true;
+                for (Model model : student.getTrainedModels()) {
+                    if (model.getStatus() == Model.status.Trained || model.getStatus() == Model.status.Tested) {
+                        if (!hasModel)
+                            pw.println();
+                        if (!first){
+                            pw.println(",");
+                        }
+                        first=false;
+                        hasModel=true;
+                        pw.println("                {");
+                        pw.println("                    \"name\": "  + "\"" + model.getName() + "\""  + ",");
+                        pw.println("                    \"data\": {");
+                        pw.println("                        \"type\": " + "\"" + model.getData().getType() + "\""  + ",");
+                        pw.println("                        \"size\": " + model.getData().getSize());
+                        pw.println("                    },");
+                        pw.println("                    \"status\": " + "\"" + model.getStatus() + "\""  + ",");
+                        pw.println("                    \"results\": " + "\"" + model.getResult() + "\"");
+                        pw.print("                }");
+                    }
+                }
+                if (hasModel) {
+                    pw.println();
+                    pw.println("            ]");
+                }
+                else
+                    pw.println("]");
+                if (num!=students.size())
+                    pw.println("        },");
             }
+            pw.println("        }");
+            pw.println("    ],");
+            pw.println("    \"conferences\": [");
+            pw.println("        {");
+            boolean first=true;
+            int last=0;
+            for (ConfrenceInformation conference : conferences){
+                last++;
+                if (!first)
+                    pw.println("        {");
+                first=false;
+                pw.println("            \"name\": \"" + conference.getName() + "\""  + ",");
+                pw.println("            \"date\": " + conference.getDate()  + ",");
+                pw.print("            \"publications\":" + " [");
+                Boolean firsty = true;
+                int counter = 0;
+                for (Model model : conference.getModels()){
+                    if (firsty)
+                        pw.println();
+                    firsty=false;
+                    pw.println("                {");
+                    pw.println("                    \"name\": \"" + model.getName() + "\"" + ",");
+                    pw.println("                    \"data\": {");
+                    pw.println("                        \"type\": \"" + model.getData().getType() + "\""  + ",");
+                    pw.println("                        \"size\": " + model.getData().getSize());
+                    pw.println("                    },");
+                    pw.println("                    \"status\": \"" + model.getStatus() + "\""  + ",");
+                    pw.println("                    \"results\": \"" + model.getResult() + "\"");
+                    if(counter <  conference.getModels().size()-1)
+                        pw.println("                },");
+                    else
+                        pw.println("                }");
+                    counter = counter +1;
+                }
+                if (firsty)
+                    pw.println("]");
+                else
+                    pw.println("            ]");
+                if (last<conferences.size())
+                    pw.println("        },");
+                else
+                    pw.println("        }");
+            }
+            pw.println("    ],");
+            pw.println("\"" + "gpuTimeUsed\": " + Cluster.getInstance().getGPUTime() + ",");
+            pw.println("\"" + "cpuTimeUsed\": " + Cluster.getInstance().getCPUTime() + ",");
+            pw.println("\"" + "batchesProcessed\": " + Cluster.getInstance().getDataBatchProcess());
+            pw.println("}");
+            pw.close();
 
 
-        }catch (FileNotFoundException e){}
 
-
-
+        }catch (FileNotFoundException e){} catch (IOException e) {
+            e.printStackTrace();
+        }
 
 
     }

@@ -44,11 +44,20 @@ public class Model {
     }
 
     public void setResult(results result){this.result = result;}
-    public results getResult(){return result;}
+
+    public results getResult(){
+        return result;
+    }
+
+    public status getStatus() {
+        return status_;
+    }
+
     public void setStatus(status status){this.status_ = status;}
 
     public String toString(){
-        return null;
+        String output = status_+" , "+result+" , "+name;
+        return output;
     }
 
 

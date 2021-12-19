@@ -1,6 +1,6 @@
 package bgu.spl.mics.application.objects;
 
-import java.util.LinkedList;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * Passive object representing information on a conference.
@@ -10,28 +10,30 @@ public class ConfrenceInformation {
 
     private String name;
     private int date;
-    private LinkedList<Model> models;
+    private ConcurrentLinkedQueue<Model> models;
     private int numOfPublications;
 
     public ConfrenceInformation(String name,int date){
         this.name = name;
         this.date = date;
-        models = new LinkedList<Model>();
+        models = new ConcurrentLinkedQueue<Model>();
         numOfPublications = 0;
     }
 
     public void addModel(Model model){
-        synchronized (models){
-            models.add(model);
-            numOfPublications = numOfPublications +1;
-        }
+        models.add(model);
+        numOfPublications = numOfPublications +1;
     }
 
     public int getDate() {
         return date;
     }
 
-    public LinkedList<Model> getModels() {
+    public String getName() {
+        return name;
+    }
+
+    public ConcurrentLinkedQueue<Model> getModels() {
         return models;
     }
 
@@ -40,7 +42,7 @@ public class ConfrenceInformation {
     }
 
     public String toString(){
-
-        return null;
+        String output = "conference information: "+name+" , "+date+" , "+models.toString()+" , "+numOfPublications;
+        return output;
     }
 }

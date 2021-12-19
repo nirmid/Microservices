@@ -2,8 +2,7 @@ package bgu.spl.mics.application.objects;
 
 import bgu.spl.mics.application.services.GPUService;
 
-import java.util.LinkedList;
-import java.util.Set;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.LinkedBlockingDeque;
 
 /**
@@ -22,14 +21,12 @@ public class GPU {
     private Model model; // current model gpu is working on
     private int capacity; // amount of batches could be stored at the same time
     private volatile int curCapacity; // amount of possible databatches to send/receive
-    private long time; // current tick
+    private volatile long time; // current tick
     private int tick; // num of ticks to train  process data
-    private LinkedBlockingDeque<DataBatch> preTrained; // databatch that has been processed by a cpu
-    private LinkedBlockingDeque<DataBatch> preProcessed; // databatch that is needed to be processed by a cpu
+    private ConcurrentLinkedDeque<DataBatch> preTrained; // databatch that has been processed by a cpu
+    private ConcurrentLinkedDeque<DataBatch> preProcessed; // databatch that is needed to be processed by a cpu
     private boolean isDone; // does the gpu finished training current model
-    private Object lock1 = new Object();
     private int curIdx;
-    private boolean terminated;
     //Nir's implement
     private long curTime;
     private DataBatch curTraining;
@@ -39,8 +36,8 @@ public class GPU {
     public GPU (Type type){
         this.type = type;
         cluster = Cluster.getInstance();
-        preTrained = new LinkedBlockingDeque<DataBatch>();
-        preProcessed = new LinkedBlockingDeque<DataBatch>();
+        preTrained = new ConcurrentLinkedDeque<DataBatch>();
+        preProcessed = new ConcurrentLinkedDeque<DataBatch>();
         time = 1;
         curTime = 1;
         model = null;
@@ -61,81 +58,51 @@ public class GPU {
                 throw new IllegalStateException("Unexpected value: " +type);
         }
         curCapacity = capacity;
-        isDone = false;
+        isDone = true; // Nir's implement
         cluster.addGPU(this);
-        terminated = false;
         //Nir's implement
         curIdx = 0 ;
         curTraining = null;
         gpuService = null;
     }
     /**
-     * @pre preTrained.isEmpty()
-     * @post this.model = model && batchIdx == 0
+     * @pre @param model isn't null
+     * @post this.model = model
      *
-     *
-     * @param model
      */
 
-    public void setModel(Model model) throws InterruptedException {
+    public void setModel(Model model){
+        if(model == null )
+            throw new IllegalArgumentException("model argument is null");
         this.model = model;
         curCapacity = capacity;
         isDone = false;
         curIdx = 0;
-        Thread split = new Thread(()->
-                splitData());
-        split.start();
-        Thread send = new Thread(()->
-                sendToCluster());
-        send.start();
-        Thread train = new Thread(()->
-                train());
-        train.start();
-        split.join();
-        send.join();
-        train.join();
-    }
-
-    public void setGpuService(GPUService gpuService_){ // Nir's implement
-        this.gpuService = gpuService_;
-    }
-
-    public void setModel2(Model model){ // Nir's implement
-        this.model = model;
-        curCapacity = capacity;
-        isDone = false;
-        curIdx = 0;
-        splitData2();
+        splitData();
         sendToClusterFirst();
     }
 
+    public void setGpuService(GPUService gpuService_){
+        this.gpuService = gpuService_;
+    }
+
+    public long getTime() {
+        return time;
+    }
+
+    /**
+     * @post time is increased by 1
+     */
     public void updateTime(){
         time = time + 1;
-        synchronized (this) {
-            notifyAll();
+        if(!isDone) {
+            sendToCluster();
+            train();
         }
     }
 
 
-    public void updateTime2(){  // Nir's implement
-        time = time + 1;
-        sendToCluster2();
-        train2();
-    }
-
-    private void splitData(){
-        Data data = model.getData();
-        while(curIdx < data.getSize()){
-            preProcessed.addLast(new DataBatch(data,curIdx));
-            synchronized (this) {
-                notifyAll();
-            }
-            curIdx = curIdx + 1000;
-        }
-        System.out.println("Thread splitData is terminated" );
-    }
-
-    private void splitData2() {  // Nir's implement
+    private void splitData() {
         Data data = model.getData();
         while (curIdx < data.getSize()) {
             if (curIdx < data.getSize()) {
@@ -143,47 +110,22 @@ public class GPU {
                 curIdx = curIdx + 1000;
             }
         }
-        System.out.println("splitdata process finished");
     }
 
     /**
      *send data to be processed only if there is enough space to receive it back
      */
-    private void sendToCluster() {
-        while(!terminated) {
-            while (curIdx < model.getData().getSize() || !preProcessed.isEmpty()) {
-                while (curCapacity < 0) {
-                    try {
-                        wait();
-                    } catch (InterruptedException e) {
-                        if (terminated)
-                            sendToCluster();
-                    }
-                }
-                synchronized (lock1) {
-                    if (curCapacity > 0 && !preProcessed.isEmpty()) {
-                        curCapacity = curCapacity - 1;
-                        synchronized (preProcessed) {
-                            cluster.receiveToProcess(preProcessed.removeFirst(), this);
-                        }
-                    }
-                }
-            }
-        }
-        System.out.println("Thread sendToCluster is terminated" );
-    }
 
-    private void sendToClusterFirst(){  // Nir's implement
-        for(int i=0; i <= capacity/3 && !preProcessed.isEmpty(); i=i+1) {  // will send to cluster when the model first set
+    private void sendToClusterFirst(){
+        for(int i=0; i <= capacity/2 && !preProcessed.isEmpty(); i=i+1) {  // will send to cluster when the model first set
             curCapacity = curCapacity - 1;
             synchronized (preProcessed) {
                 cluster.receiveToProcess(preProcessed.removeFirst(), this);
             }
         }
-        System.out.println("first send to cluster finished");
     }
 
-    private void sendToCluster2() {  // Nir's implement
+    private void sendToCluster() {
         if(curCapacity > 0 && !preProcessed.isEmpty() ){
             curCapacity = curCapacity - 1;
             synchronized (preProcessed) {
@@ -214,87 +156,40 @@ public class GPU {
      *  number of ticks required deteremined by GPU type
      *  when finished training all data, need to finish event
      */
-    private void train() {
-        while(!isDone & !terminated) {
-            while (preTrained.isEmpty()) {
-                try {
-                    synchronized (this){
-                        wait();
-                    }
-                }
-                catch (InterruptedException e) {
-                    if (terminated)
-                        train();
-                }
-            }
-            if(!preTrained.isEmpty())
-                preTrained.removeFirst();
-            else
-                train();
-            long currentTime = time;
-            while (time - currentTime < tick) {
-                try {
-                    cluster.addGPUTime(1); // STATISTICS
-                    synchronized (this) {
-                        wait();
-                    }
-                }
-                catch (InterruptedException e) {
-                    if (terminated)
-                        train();
-                }
-            }
-            model.getData().updateProcess(1000);
-            synchronized (lock1) {
-                curCapacity = curCapacity + 1;
-            }
-            if (model.getData().getSize() <= model.getData().getProcessed()) {
-                isDone = true;
-                cluster.addModelTrained(model.getName()); //STATISTICS
-            }
-        }
-        System.out.println("Thread train is terminated" );
-    }
 
-    private void train2() {  // Nir's implement
-        if (curTraining == null) {
-            if (!preTrained.isEmpty()) {
-                synchronized (preTrained) {
-                    curTraining = preTrained.removeFirst();
-                }
-                curTime = time;
-            }
-        } else
-            if (time - curTime >= tick) {
-            model.getData().updateProcess(1000);
-            cluster.addGPUTime(1); // STATISTICS
-            curCapacity = curCapacity + 1;
-            if (model.getData().getSize() <= model.getData().getProcessed()) {
-                isDone = true;
-                gpuService.gpuComplete();
-                cluster.addModelTrained(model.getName()); //STATISTICS
-            }
-            else{
+    private void train() {
+            if (curTraining == null) {
                 if (!preTrained.isEmpty()) {
                     synchronized (preTrained) {
                         curTraining = preTrained.removeFirst();
                     }
                     curTime = time;
                 }
-                else
-                    curTraining = null;
+            } else
+                if (time - curTime >= tick) {
+                    model.getData().updateProcess(1000);
+                    cluster.addGPUTime(1); // STATISTICS
+                    curCapacity = curCapacity + 1;
+                    if (model.getData().getSize() <= model.getData().getProcessed()) {
+                        isDone = true;
+                        gpuService.gpuComplete();
+                        cluster.addModelTrained(model.getName()); //STATISTICS
+                    }
+                else {
+                    if (!preTrained.isEmpty()) {
+                        synchronized (preTrained) {
+                            curTraining = preTrained.removeFirst();
+                        }
+                        curTime = time;
+                    } else
+                        curTraining = null;
+                }
             }
+                else {
+                    cluster.addGPUTime(1); // STATISTICS
+                }
         }
-            else
-                cluster.addGPUTime(1); // STATISTICS
-    }
 
-    public void terminate(){
-        terminated = true;
-        synchronized (this) {
-            notifyAll();
-        }
-    }
     public boolean isDone(){ return isDone;}
     public int getCapacity(){return capacity;}
     public int getPreTrainedSize(){return preTrained.size();}

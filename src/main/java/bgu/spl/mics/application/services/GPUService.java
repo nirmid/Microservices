@@ -8,6 +8,9 @@ import bgu.spl.mics.application.messages.TrainModelEvent;
 import bgu.spl.mics.application.objects.GPU;
 import bgu.spl.mics.application.objects.Model;
 
+import java.util.concurrent.ConcurrentLinkedDeque;
+
+
 /**
  * GPU service is responsible for handling the
  * {@link TrainModelEvent} and {@link TestModelEvent},
@@ -18,64 +21,44 @@ import bgu.spl.mics.application.objects.Model;
  */
 public class GPUService extends MicroService {
     private GPU gpu;
-    private boolean isDone;
-    private TrainModelEvent trainModelEvent; // Nir's implement
+    private TrainModelEvent trainModelEvent;
+    private ConcurrentLinkedDeque<TrainModelEvent> trainModelEvents;
+
 
     public GPUService(String name,GPU _gpu) {
         super(name);
         gpu = _gpu;
-        isDone = true;
-    }
-
-    public GPUService(String name,GPU _gpu,int n) {  // Nir's implement
-        super(name);
-        gpu = _gpu;
-        isDone = true; // no need , using GPU isDone
         gpu.setGpuService(this);
         trainModelEvent= null;
+        trainModelEvents = new ConcurrentLinkedDeque<TrainModelEvent>();
     }
-
-    public boolean getIsDoneGpu(){   // Nir's implement
-        return gpu.isDone();
-     }
 
      public void gpuComplete(){
          trainModelEvent.getModel().setStatus(Model.status.Trained);
-        complete(trainModelEvent,trainModelEvent.getModel());
+         complete(trainModelEvent,trainModelEvent.getModel());
     }
 
     @Override
     protected void initialize() {
         subscribeBroadcast(TickBroadcast.class,(t)-> {
-            gpu.updateTime2(); // Nir's implement
+            if(gpu.isDone() && !trainModelEvents.isEmpty()) {
+                trainModelEvent = trainModelEvents.removeFirst();
+                gpu.setModel(trainModelEvent.getModel());
+                trainModelEvent.getModel().setStatus(Model.status.Training);
+            }
+            gpu.updateTime();
         });
         subscribeBroadcast(TerminateBroadcast.class,(t) ->{
-            gpu.terminate();
             terminate();
         });
-        subscribeEvent(TrainModelEvent.class,(t)-> { // Nir's implement
-            this.trainModelEvent =t;
-            gpu.setModel2(t.getModel());
-            t.getModel().setStatus(Model.status.Training);
+        subscribeEvent(TrainModelEvent.class,(t)-> {
+            trainModelEvents.add(t);
+            if(gpu.isDone()) {
+                this.trainModelEvent = trainModelEvents.removeFirst();
+                gpu.setModel(t.getModel());
+                t.getModel().setStatus(Model.status.Training);
+            }
                 });
-
-        /*subscribeEvent(TrainModelEvent.class,(t)-> {
-                    Thread set = new Thread(() ->
-                    {
-                        t.getModel().setStatus(Model.status.Training);
-                        try {
-                            isDone = false;
-                            gpu.setModel(t.getModel());
-                            t.getModel().setStatus(Model.status.Trained);
-                            complete(t, t.getModel());
-                            isDone = true;
-                        } catch (InterruptedException e) {
-                        }
-                    });
-                    set.start();
-                    System.out.println("Thread TrainModelEvent is terminated" );
-                });
-         */
 
         subscribeEvent(TestModelEvent.class,(t)->{
             double rnd = Math.random();
@@ -99,15 +82,21 @@ public class GPUService extends MicroService {
                         complete(t, Model.results.Bad);
                         t.getModel().setResult(Model.results.Bad);
                     }
+                    break;
                 default:
-                    throw new IllegalStateException("Unexpected value: " +t.getType());
+                    if(rnd < 0.6) {
+                        complete(t, Model.results.Good);
+                        t.getModel().setResult(Model.results.Good);
+                    }
+                    else {
+                        complete(t, Model.results.Bad);
+                        t.getModel().setResult(Model.results.Bad);
+                    }
+                    break;
 
             }
             t.getModel().setStatus(Model.status.Tested);
         });
     }
 
-    public boolean isDone() {
-        return isDone;
-    }
 }

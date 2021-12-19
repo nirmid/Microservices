@@ -36,6 +36,7 @@ public class Student {
         models = _models;
         terminated = false;
         isDone = false;
+        trainedModels = new LinkedList<Model>();
     }
 
     public void receiveTrainedModels(Model trainedModel){
@@ -45,13 +46,38 @@ public class Student {
         }
     }
 
+    public LinkedList<Model> getTrainedModels() {
+        return trainedModels;
+    }
+
     public LinkedList<Model> getModels (){return  models; }
     public void setPapersRead(int add){papersRead = papersRead + add; }
     public Degree getStatus(){return status;}
 
+    public String getDepartment() {
+        return department;
+    }
+
+    public int getPublications() {
+        return publications;
+    }
+
+    public int getPapersRead() {
+        return papersRead;
+    }
+
+    public String getName() {
+        return name;
+    }
+
     public void terminate(){
         papersRead = papersRead - publications;
         terminated = true;
+    }
+
+    public String toString(){
+        String output = name+"\n"+department+"\n"+status+"\n"+publications+"\n"+papersRead+"\n"+trainedModels;
+        return output;
     }
 
 

@@ -1,6 +1,7 @@
-/*ppackage bgu.spl.mics;
+package bgu.spl.mics;
 
 import bgu.spl.mics.application.services.StudentService;
+import bgu.spl.mics.application.services.TimeService;
 import bgu.spl.mics.example.messages.ExampleBroadcast;
 import bgu.spl.mics.example.messages.ExampleEvent;
 import org.junit.Before;
@@ -19,7 +20,7 @@ public class MessageBusImplTest {
         bus = MessageBusImpl.getInstace();
         event = new ExampleEvent("x");
         broadcast = new ExampleBroadcast("y");
-        m = new StudentService("nir");
+        m = new TimeService(1000,5);
     }
 
     @Test
@@ -98,4 +99,4 @@ public class MessageBusImplTest {
 
     }
 
-}*/
+}

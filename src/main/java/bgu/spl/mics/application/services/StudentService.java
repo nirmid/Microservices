@@ -1,6 +1,5 @@
 package bgu.spl.mics.application.services;
 
-import bgu.spl.mics.Event;
 import bgu.spl.mics.Future;
 import bgu.spl.mics.MicroService;
 import bgu.spl.mics.application.messages.*;
@@ -34,6 +33,9 @@ public class StudentService extends MicroService {
             terminated = true;
             student.terminate();
             terminate();
+            synchronized (this) {
+                notifyAll();
+            }
         });
         subscribeBroadcast(PublishConferenceBroadcast.class,(t) -> {
             int toRead = t.getConference().getNumOfPublications();
@@ -52,7 +54,7 @@ public class StudentService extends MicroService {
                     curModel = (Model) student.getModels().removeFirst();
                 }
                 Future newFuture = sendEvent(new TrainModelEvent(curModel));
-                while (!terminated && !newFuture.isDone()) { // nullpointer exception if newfuture is null
+                while (!terminated && !newFuture.isDone()) {
                     try {
                         synchronized (this) {
                             wait();
@@ -76,7 +78,6 @@ public class StudentService extends MicroService {
                     }
                 }
             }
-            System.out.println("Thread Student send is terminated" );
         });
         send.start();
     }
